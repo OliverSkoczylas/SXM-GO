@@ -10,8 +10,8 @@ gamified mobile tourism app for St. Maarten that transforms island exploration i
 - 👥 Group competition and social features
 
 ## Tech Stack
-- **Frontend:** React Native / Flutter (TBD)
-- **Backend:** Supabase / Firebase (TBD)
+- **Frontend:** React Native
+- **Backend:** Supabase
 - **Maps:** Google Maps API / Mapbox (TBD)
 - **Authentication:** OAuth 2.0
 
