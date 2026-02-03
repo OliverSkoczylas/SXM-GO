@@ -1,0 +1,54 @@
+{
+  "name": "sxm-go",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-navigation/bottom-tabs": "^6.5.0",
+    "@react-navigation/native": "^6.1.0",
+    "@react-navigation/native-stack": "^6.9.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "@react-native-google-signin/google-signin": "^11.0.0",
+    "@invertase/react-native-apple-authentication": "^2.3.0",
+    "react": "18.2.0",
+    "react-native": "0.73.0",
+    "react-native-config": "^1.5.0",
+    "react-native-fbsdk-next": "^13.0.0",
+    "react-native-image-picker": "^7.1.0",
+    "react-native-keychain": "^8.2.0",
+    "react-native-permissions": "^4.1.0",
+    "react-native-safe-area-context": "^4.8.0",
+    "react-native-screens": "^3.29.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-native": "^5.4.0",
+    "@testing-library/react-native": "^12.4.0",
+    "@types/jest": "^29.5.0",
+    "@types/react": "^18.2.0",
+    "@types/react-native": "^0.73.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "react-test-renderer": "18.2.0",
+    "typescript": "^5.3.0"
+  },
+  "jest": {
+    "preset": "react-native",
+    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json"],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@react-native|react-native|@react-navigation|@supabase|react-native-keychain|react-native-permissions|react-native-image-picker|react-native-screens|react-native-safe-area-context)/)"
+    ],
+    "setupFilesAfterSetup": ["@testing-library/jest-native/extend-expect"]
+  }
+}
