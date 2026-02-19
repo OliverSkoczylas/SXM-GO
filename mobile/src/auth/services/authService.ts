@@ -6,10 +6,10 @@
 import { AuthError, Session, User } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import { getSupabaseClient } from './supabaseClient';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { appleAuth } from '@invertase/react-native-apple-authentication';
-import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 import type { AuthResult } from '../types/auth.types';
+
+// OAuth native modules are loaded lazily so the app doesn't crash when
+// a provider's native SDK is disabled or not yet configured.
 
 // ── Email/Password Auth ──
 
@@ -47,6 +47,7 @@ export async function signInWithEmail(
 
 export async function signInWithGoogle(): Promise<AuthResult> {
   try {
+    const { GoogleSignin } = require('@react-native-google-signin/google-signin');
     await GoogleSignin.hasPlayServices();
     const response = await GoogleSignin.signIn();
     // @ts-expect-error - v11 API returns { data: { idToken } } but types may not match
@@ -86,6 +87,7 @@ export async function signInWithApple(): Promise<AuthResult> {
   }
 
   try {
+    const { appleAuth } = require('@invertase/react-native-apple-authentication');
     const appleAuthResponse = await appleAuth.performRequest({
       requestedOperation: appleAuth.Operation.LOGIN,
       requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
@@ -118,6 +120,7 @@ export async function signInWithApple(): Promise<AuthResult> {
 
 export async function signInWithFacebook(): Promise<AuthResult> {
   try {
+    const { LoginManager, AccessToken } = require('react-native-fbsdk-next');
     const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
 
     if (result.isCancelled) {
