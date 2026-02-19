@@ -49,7 +49,8 @@ export async function signInWithGoogle(): Promise<AuthResult> {
   try {
     await GoogleSignin.hasPlayServices();
     const response = await GoogleSignin.signIn();
-    const idToken = response.data?.idToken;
+    // @ts-expect-error - v11 API returns { data: { idToken } } but types may not match
+    const idToken = response.data?.idToken ?? response.idToken;
 
     if (!idToken) {
       return {

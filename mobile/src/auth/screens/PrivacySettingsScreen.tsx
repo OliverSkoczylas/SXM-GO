@@ -18,9 +18,9 @@ import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import * as privacyService from '../services/privacyService';
 import { AUTH_MESSAGES } from '../constants/authConstants';
-import { APP_CONFIG } from '../../../shared/config/app.config';
+import { APP_CONFIG } from '../../shared/config/app.config';
 import type { ConsentState, DeletionRequest } from '../types/auth.types';
-import Toast from '../../../shared/components/Toast';
+import Toast from '../../shared/components/Toast';
 
 export default function PrivacySettingsScreen() {
   const { user, signOut } = useAuth();

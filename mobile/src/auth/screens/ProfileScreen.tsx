@@ -19,7 +19,7 @@ import { useProfile } from '../hooks/useProfile';
 import { displayNameSchema, bioSchema } from '../utils/validation';
 import { AUTH_MESSAGES } from '../constants/authConstants';
 import AvatarPicker from '../components/AvatarPicker';
-import Toast from '../../../shared/components/Toast';
+import Toast from '../../shared/components/Toast';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -73,7 +73,7 @@ export default function ProfileScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Name</Text>
             <TextInput
-              style={[styles.input, fieldErrors.displayName && styles.inputError]}
+              style={[styles.input, fieldErrors.displayName ? styles.inputError : undefined]}
               value={editName}
               onChangeText={setEditName}
               autoCapitalize="words"
@@ -85,7 +85,7 @@ export default function ProfileScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Bio</Text>
             <TextInput
-              style={[styles.input, styles.bioInput, fieldErrors.bio && styles.inputError]}
+              style={[styles.input, styles.bioInput, fieldErrors.bio ? styles.inputError : undefined]}
               value={editBio}
               onChangeText={setEditBio}
               multiline

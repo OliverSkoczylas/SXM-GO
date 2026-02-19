@@ -13,11 +13,12 @@ export async function uploadAvatar(
   }
 
   const asset = image.assets[0];
+  const uri = asset.uri!; // Already validated above
   const fileExt = asset.fileName?.split('.').pop() ?? 'jpg';
   const filePath = `${userId}/avatar.${fileExt}`;
 
   // Convert URI to blob for upload
-  const response = await fetch(asset.uri);
+  const response = await fetch(uri);
   const blob = await response.blob();
 
   const supabase = getSupabaseClient();

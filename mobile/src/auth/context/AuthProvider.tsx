@@ -9,6 +9,7 @@ import type { AuthState, Profile } from '../types/auth.types';
 import * as authService from '../services/authService';
 import * as profileService from '../services/profileService';
 import { getSupabaseClient } from '../services/supabaseClient';
+import { initializeOAuthProviders } from '../services/oauthConfig';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
@@ -19,8 +20,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile: null,
   });
 
-  // On mount: restore session from Keychain (FR-004)
+  // On mount: initialize OAuth providers and restore session from Keychain (FR-001, FR-004)
   useEffect(() => {
+    initializeOAuthProviders();
+
     const init = async () => {
       const { user, session } = await authService.restoreSession();
       if (user && session) {

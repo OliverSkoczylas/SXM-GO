@@ -18,7 +18,7 @@ import { useAuth } from '../hooks/useAuth';
 import { AUTH_ERRORS } from '../constants/authConstants';
 import LoginForm from '../components/LoginForm';
 import SocialLoginButtons from '../components/SocialLoginButtons';
-import Toast from '../../../shared/components/Toast';
+import Toast from '../../shared/components/Toast';
 import { TouchableOpacity } from 'react-native';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
