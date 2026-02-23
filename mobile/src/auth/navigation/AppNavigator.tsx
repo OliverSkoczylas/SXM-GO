@@ -10,7 +10,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
-import SXMmap from '../../map/screens/SXMmap'
+import StMaartenMap from '../../map/screens/SXMmap'
 
 // ── Placeholder screens for other devs ──
 
@@ -23,7 +23,7 @@ function PlaceholderScreen({ title }: { title: string }) {
   );
 }
 
-const MapPlaceholder = () => <SXMmap />;          // Dev 2
+const MapPlaceholder = () => <StMaartenMap />;          // Dev 2
 const LeaderboardPlaceholder = () => <PlaceholderScreen title="Leaderboard" />; // Dev 4
 const ChallengesPlaceholder = () => <PlaceholderScreen title="Challenges" />;   // Dev 3
 
