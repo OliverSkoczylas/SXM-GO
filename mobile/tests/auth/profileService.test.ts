@@ -1,8 +1,3 @@
-const mockSelect = jest.fn();
-const mockUpdate = jest.fn();
-const mockEq = jest.fn();
-const mockSingle = jest.fn();
-
 // Build a chainable mock that supports .from().select().eq().single() etc.
 const createChainMock = () => {
   const chain: any = {};

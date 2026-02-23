@@ -5,7 +5,7 @@
 
 import { getSupabaseClient } from './supabaseClient';
 import { sanitizeProfileUpdate } from '../utils/inputSanitizer';
-import type { Profile, ProfileUpdate, UserPreferences } from '../types/auth.types';
+import type { Profile, ProfileUpdate } from '../types/auth.types';
 
 export async function getProfile(
   userId: string,
@@ -30,18 +30,6 @@ export async function updateProfile(
     .update(sanitized)
     .eq('id', userId)
     .select()
-    .single();
-  return { data, error };
-}
-
-export async function getPreferences(
-  userId: string,
-): Promise<{ data: UserPreferences | null; error: any }> {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from('user_preferences')
-    .select('*')
-    .eq('user_id', userId)
     .single();
   return { data, error };
 }

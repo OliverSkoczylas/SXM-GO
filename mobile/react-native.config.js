@@ -3,7 +3,6 @@ module.exports = {
     ios: {},
     android: {},
   },
-  assets: ['./src/assets/fonts/'],
   dependencies: {
     // Disable Facebook SDK autolinking on Android until a real Facebook App ID
     // is configured.  The placeholder value causes a native crash on startup.

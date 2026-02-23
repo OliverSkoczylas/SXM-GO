@@ -3,7 +3,7 @@
 // UX-004: Request photo library permission before opening picker
 
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, Text, Alert } from 'react-native';
 import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
 import { APP_CONFIG } from '../../shared/config/app.config';
 import { requestPhotoLibraryPermission } from '../../shared/services/permissionService';
@@ -38,6 +38,7 @@ export default function AvatarPicker({
 
         const asset = response.assets?.[0];
         if (asset?.fileSize && asset.fileSize > APP_CONFIG.maxAvatarSizeBytes) {
+          Alert.alert('Image too large', 'Please choose an image under 5MB.');
           return;
         }
 

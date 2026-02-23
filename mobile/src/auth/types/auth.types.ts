@@ -95,6 +95,7 @@ export interface AuthState {
   session: Session | null;
   profile: Profile | null;
   preferences: UserPreferences | null;
+  onboardingSeen: boolean;
 }
 
 // ── Auth Result (returned by auth operations) ──

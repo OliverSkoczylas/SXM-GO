@@ -2,13 +2,13 @@
 // UX-003: Skip onboarding for returning users (checked via AsyncStorage flag)
 // UX-005: New user journey: Sign up -> Onboarding -> Map view
 
-import React, { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import { useAuth } from '../hooks/useAuth';
 
 export type AuthStackParamList = {
   Onboarding: undefined;
@@ -20,15 +20,8 @@ export type AuthStackParamList = {
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export function AuthNavigator() {
-  const [initialRoute, setInitialRoute] = useState<keyof AuthStackParamList | null>(null);
-
-  useEffect(() => {
-    AsyncStorage.getItem('onboarding_seen')
-      .then((val) => setInitialRoute(val === '1' ? 'Login' : 'Onboarding'))
-      .catch(() => setInitialRoute('Onboarding'));
-  }, []);
-
-  if (initialRoute === null) return null;
+  const { onboardingSeen } = useAuth();
+  const initialRoute: keyof AuthStackParamList = onboardingSeen ? 'Login' : 'Onboarding';
 
   return (
     <Stack.Navigator

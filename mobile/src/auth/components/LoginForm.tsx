@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { signInSchema, SignInInput } from '../utils/validation';
+import { signInSchema } from '../utils/validation';
 import { AUTH_ERRORS } from '../constants/authConstants';
 
 interface LoginFormProps {

@@ -8,6 +8,14 @@ import { Platform } from 'react-native';
 import { getSupabaseClient } from './supabaseClient';
 import type { AuthResult } from '../types/auth.types';
 
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out. Check your connection.')), ms),
+    ),
+  ]);
+
 // OAuth native modules are loaded lazily so the app doesn't crash when
 // a provider's native SDK is disabled or not yet configured.
 
@@ -19,15 +27,10 @@ export async function signUpWithEmail(
   displayName: string,
 ): Promise<AuthResult> {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: displayName,
-      },
-    },
-  });
+  const { data, error } = await withTimeout(
+    supabase.auth.signUp({ email, password, options: { data: { full_name: displayName } } }),
+    10000,
+  );
   return { user: data.user ?? null, session: data.session ?? null, error };
 }
 
@@ -36,10 +39,18 @@ export async function signInWithEmail(
   password: string,
 ): Promise<AuthResult> {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  console.log('[Auth] signInWithEmail: starting request...');
+  try {
+    const ping = await withTimeout(fetch('https://alqipxyidwnvzkbhmzsz.supabase.co/auth/v1/health'), 5000);
+    console.log('[Auth] direct fetch test:', ping.status);
+  } catch (e: any) {
+    console.log('[Auth] direct fetch test FAILED:', e.message);
+  }
+  const { data, error } = await withTimeout(
+    supabase.auth.signInWithPassword({ email, password }),
+    30000,
+  );
+  console.log('[Auth] signInWithEmail: got response', { hasUser: !!data?.user, error: error?.message });
   return { user: data.user ?? null, session: data.session ?? null, error };
 }
 
@@ -151,7 +162,7 @@ export async function signInWithFacebook(): Promise<AuthResult> {
 
 export async function restoreSession(): Promise<AuthResult> {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await withTimeout(supabase.auth.getSession(), 8000);
   return {
     user: data.session?.user ?? null,
     session: data.session ?? null,
