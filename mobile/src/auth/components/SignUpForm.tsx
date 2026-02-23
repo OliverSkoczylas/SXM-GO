@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { signUpSchema, SignUpInput } from '../utils/validation';
+import { signUpSchema } from '../utils/validation';
 import { AUTH_ERRORS } from '../constants/authConstants';
 import ConsentCheckbox from './ConsentCheckbox';
 

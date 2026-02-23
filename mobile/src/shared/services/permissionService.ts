@@ -2,7 +2,7 @@
 // Centralizes runtime permission requests for location, camera, and photo library.
 // Uses react-native-permissions for cross-platform consistency.
 
-import { Platform, Alert, Linking } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import {
   check,
   request,
