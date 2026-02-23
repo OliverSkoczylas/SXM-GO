@@ -39,10 +39,18 @@ export async function signInWithEmail(
   password: string,
 ): Promise<AuthResult> {
   const supabase = getSupabaseClient();
+  console.log('[Auth] signInWithEmail: starting request...');
+  try {
+    const ping = await withTimeout(fetch('https://alqipxyidwnvzkbhmzsz.supabase.co/auth/v1/health'), 5000);
+    console.log('[Auth] direct fetch test:', ping.status);
+  } catch (e: any) {
+    console.log('[Auth] direct fetch test FAILED:', e.message);
+  }
   const { data, error } = await withTimeout(
     supabase.auth.signInWithPassword({ email, password }),
-    10000,
+    30000,
   );
+  console.log('[Auth] signInWithEmail: got response', { hasUser: !!data?.user, error: error?.message });
   return { user: data.user ?? null, session: data.session ?? null, error };
 }
 
