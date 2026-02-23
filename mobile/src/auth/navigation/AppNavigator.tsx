@@ -10,6 +10,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import LeaderboardScreen from '../../leaderboard/screens/LeaderboardScreen';
 
 // ── Placeholder screens for other devs ──
 
@@ -23,7 +24,6 @@ function PlaceholderScreen({ title }: { title: string }) {
 }
 
 const MapPlaceholder = () => <PlaceholderScreen title="Map" />;          // Dev 2
-const LeaderboardPlaceholder = () => <PlaceholderScreen title="Leaderboard" />; // Dev 4
 const ChallengesPlaceholder = () => <PlaceholderScreen title="Challenges" />;   // Dev 3
 
 const placeholderStyles = StyleSheet.create({
@@ -99,8 +99,12 @@ export function AppNavigator() {
       />
       <Tab.Screen
         name="LeaderboardTab"
-        component={LeaderboardPlaceholder}
-        options={{ tabBarLabel: 'Leaderboard' }}
+        component={LeaderboardScreen}
+        options={{ 
+          tabBarLabel: 'Leaderboard',
+          headerShown: true,
+          headerTitle: 'Leaderboard',
+        }}
       />
       <Tab.Screen
         name="ChallengesTab"
