@@ -15,12 +15,11 @@
  *   - Live GPS status bar (lat/lng, accuracy, speed)
  *
  * ─── Dependencies ────────────────────────────────────────────────────────────
- *   npm install react-native-maps
- *   npx expo install expo-location        (Expo)
+ *   npm install react-native-maps --legacy-peer-deps
+ *   npm install @react-native-community/geolocation --legacy-peer-deps
  *
  * ─── OSM Tile Policy ─────────────────────────────────────────────────────────
- *   We may need to change tilemap providers when going to scale, as OSM tilemap
- *   is only for small apps / development
+ *   We will need to change tile providers before release.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -34,6 +33,7 @@ import {
   Platform,
   SafeAreaView,
   StatusBar,
+  PermissionsAndroid,
 } from 'react-native';
 import MapView, {
   Marker,
@@ -42,7 +42,11 @@ import MapView, {
   PROVIDER_DEFAULT,
   Region,
 } from 'react-native-maps';
-import * as Location from 'expo-location';
+import Geolocation from '@react-native-community/geolocation';
+
+// These types aren't reliably exported as named types in all versions
+type GeoPosition = { coords: { latitude: number; longitude: number; accuracy: number | null; heading: number | null; speed: number | null } };
+type GeoError = { code: number; message: string };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,8 +68,16 @@ interface UserLocation {
 
 // ─── OSM Tile URL ─────────────────────────────────────────────────────────────
 //
-// Swap this string to switch tile providers:
-
+// Swap this string to switch tile providers with zero other code changes:
+//
+//   CartoDB Positron (clean light theme):
+//     'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+//
+//   Stadia Alidade Smooth:
+//     'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}.png'
+//
+//   OpenTopoMap:
+//     'https://tile.opentopomap.org/{z}/{x}/{y}.png'
 
 const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
@@ -79,7 +91,6 @@ const ST_MAARTEN_INITIAL_REGION: Region = {
 };
 
 // ─── Landmark Pins ────────────────────────────────────────────────────────────
-// Temporary until the locations folder is set up
 
 const ISLAND_PINS: LocationPin[] = [
   {
@@ -189,7 +200,7 @@ export default function StMaartenMap() {
   const [selectedPin, setSelectedPin] = useState<LocationPin | null>(null);
   const [activeCategory, setActiveCategory] = useState<LocationPin['category'] | 'all'>('all');
 
-  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  const watchId = useRef<number | null>(null);
 
   // ── Pulse animation ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -203,60 +214,83 @@ export default function StMaartenMap() {
     return () => loop.stop();
   }, []);
 
+  // ── Request Android permission helper ────────────────────────────────────────
+  const requestAndroidPermission = async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') return true;
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          title: 'Location Permission',
+          message: 'This app needs access to your location to show your position on the map.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Deny',
+        }
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch {
+      return false;
+    }
+  };
+
   // ── Start GPS ────────────────────────────────────────────────────────────────
   const startTracking = useCallback(async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationError('Location permission denied.');
-        Alert.alert(
-          'Permission Required',
-          'Enable location access in Settings to use GPS tracking.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      setIsTracking(true);
-      setLocationError(null);
-
-      const current = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setUserLocation({
-        latitude: current.coords.latitude,
-        longitude: current.coords.longitude,
-        accuracy: current.coords.accuracy,
-        heading: current.coords.heading,
-        speed: current.coords.speed,
-      });
-
-      locationSubscription.current = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.High, distanceInterval: 5, timeInterval: 3000 },
-        (pos) =>
-          setUserLocation({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            heading: pos.coords.heading,
-            speed: pos.coords.speed,
-          })
+    const hasPermission = await requestAndroidPermission();
+    if (!hasPermission) {
+      setLocationError('Location permission denied.');
+      Alert.alert(
+        'Permission Required',
+        'Enable location access in Settings to use GPS tracking.',
+        [{ text: 'OK' }]
       );
-    } catch {
-      setLocationError('Could not get location.');
-      setIsTracking(false);
+      return;
     }
+
+    setIsTracking(true);
+    setLocationError(null);
+
+    const onSuccess = (pos: GeoPosition) => {
+      setUserLocation({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        heading: pos.coords.heading,
+        speed: pos.coords.speed,
+      });
+    };
+
+    const onError = (err: GeoError) => {
+      setLocationError(`Location error: ${err.message}`);
+      setIsTracking(false);
+    };
+
+    const geoOptions = {
+      enableHighAccuracy: true,
+      distanceFilter: 5,       // metres between updates
+      interval: 3000,          // ms (Android only)
+      fastestInterval: 1000,   // ms (Android only)
+    };
+
+    // Immediate fix
+    Geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: true });
+
+    // Continuous watch
+    watchId.current = Geolocation.watchPosition(onSuccess, onError, geoOptions);
   }, []);
 
   // ── Stop GPS ─────────────────────────────────────────────────────────────────
   const stopTracking = useCallback(() => {
-    locationSubscription.current?.remove();
-    locationSubscription.current = null;
+    if (watchId.current !== null) {
+      Geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+    }
     setIsTracking(false);
     setFollowUser(false);
   }, []);
 
-  useEffect(() => () => { locationSubscription.current?.remove(); }, []);
+  useEffect(() => () => {
+    if (watchId.current !== null) Geolocation.clearWatch(watchId.current);
+  }, []);
 
   // ── Follow user ──────────────────────────────────────────────────────────────
   useEffect(() => {
