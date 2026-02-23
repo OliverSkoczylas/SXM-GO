@@ -1,11 +1,11 @@
 // Auth state provider
 // FR-003: Real-time cloud sync for user data
 // FR-004: Persistent sessions - restores session from Keychain on mount
-// Subscribes to Supabase auth state changes and realtime profile updates.
+// Subscribes to Supabase auth state changes and realtime profile/preferences updates.
 
 import React, { useEffect, useState, useCallback, ReactNode } from 'react';
 import { AuthContext, AuthContextValue } from './AuthContext';
-import type { AuthState, Profile } from '../types/auth.types';
+import type { AuthState, Profile, UserPreferences } from '../types/auth.types';
 import * as authService from '../services/authService';
 import * as profileService from '../services/profileService';
 import { getSupabaseClient } from '../services/supabaseClient';
@@ -18,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     session: null,
     profile: null,
+    preferences: null,
   });
 
   // On mount: initialize OAuth providers and restore session from Keychain (FR-001, FR-004)
@@ -27,13 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       const { user, session } = await authService.restoreSession();
       if (user && session) {
-        const { data: profile } = await profileService.getProfile(user.id);
+        const [{ data: profile }, { data: preferences }] = await Promise.all([
+          profileService.getProfile(user.id),
+          profileService.getPreferences(user.id),
+        ]);
         setState({
           isLoading: false,
           isAuthenticated: true,
           user,
           session,
           profile,
+          preferences,
         });
       } else {
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -49,13 +54,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const { data: profile } = await profileService.getProfile(session.user.id);
+        const [{ data: profile }, { data: preferences }] = await Promise.all([
+          profileService.getProfile(session.user.id),
+          profileService.getPreferences(session.user.id),
+        ]);
         setState({
           isLoading: false,
           isAuthenticated: true,
           user: session.user,
           session,
           profile,
+          preferences,
         });
       } else if (event === 'SIGNED_OUT') {
         setState({
@@ -64,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user: null,
           session: null,
           profile: null,
+          preferences: null,
         });
       } else if (event === 'TOKEN_REFRESHED' && session) {
         setState((prev) => ({ ...prev, session }));
@@ -103,11 +113,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [state.user?.id]);
 
+  // FR-003: Realtime user_preferences sync - listen for changes to notification/theme settings.
+  useEffect(() => {
+    if (!state.user) return;
+
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel(`preferences:${state.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_preferences',
+          filter: `user_id=eq.${state.user.id}`,
+        },
+        (payload) => {
+          setState((prev) => ({
+            ...prev,
+            preferences: payload.new as UserPreferences,
+          }));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [state.user?.id]);
+
   const refreshProfile = useCallback(async () => {
     if (!state.user) return;
     const { data } = await profileService.getProfile(state.user.id);
     if (data) {
       setState((prev) => ({ ...prev, profile: data }));
+    }
+  }, [state.user]);
+
+  const refreshPreferences = useCallback(async () => {
+    if (!state.user) return;
+    const { data } = await profileService.getPreferences(state.user.id);
+    if (data) {
+      setState((prev) => ({ ...prev, preferences: data }));
     }
   }, [state.user]);
 
@@ -122,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authService.signOut();
     },
     refreshProfile,
+    refreshPreferences,
   };
 
   return (

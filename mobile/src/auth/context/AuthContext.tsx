@@ -9,6 +9,7 @@ export interface AuthContextValue extends AuthState {
   signInWithFacebook: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshPreferences: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
