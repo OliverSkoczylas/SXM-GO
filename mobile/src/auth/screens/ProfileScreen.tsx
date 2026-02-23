@@ -148,6 +148,19 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {profile.achievements && profile.achievements.length > 0 && (
+        <View style={styles.achievementsSection}>
+          <Text style={styles.sectionTitle}>Achievements</Text>
+          <View style={styles.badgeRow}>
+            {profile.achievements.map((badge, i) => (
+              <View key={i} style={styles.badge}>
+                <Text style={styles.badgeText}>{badge}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View style={styles.menuSection}>
         <TouchableOpacity
           style={styles.menuItem}
@@ -242,6 +255,25 @@ const styles = StyleSheet.create({
   stat: { alignItems: 'center' },
   statValue: { fontSize: 24, fontWeight: '700', color: '#1A1A1A' },
   statLabel: { fontSize: 13, color: '#6B7280', marginTop: 4 },
+  achievementsSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  badge: {
+    backgroundColor: '#EBF5FF',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  badgeText: { fontSize: 13, color: '#0066CC', fontWeight: '500' },
   menuSection: { gap: 1 },
   menuItem: {
     paddingVertical: 16,

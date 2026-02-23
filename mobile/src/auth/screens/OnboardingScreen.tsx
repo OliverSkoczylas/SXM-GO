@@ -1,6 +1,7 @@
 // 3-screen onboarding flow
 // UX-001: First-time users complete Welcome, Permissions, Tutorial
 // UX-002: Tutorial explains checking in, earning points, completing challenges
+// UX-003: Shown only once — marks flag in AsyncStorage on completion
 
 import React, { useState, useRef } from 'react';
 import {
@@ -12,14 +13,20 @@ import {
   TouchableOpacity,
   ViewToken,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import { ONBOARDING_SCREENS } from '../constants/authConstants';
 import { useLocationPermission } from '../hooks/useLocationPermission';
 import LocationPermissionModal from '../components/LocationPermissionModal';
+import { WelcomeIcon, PointsIcon, LocationIcon } from '../components/OnboardingIcons';
 
 const { width } = Dimensions.get('window');
+
+const ICONS = [WelcomeIcon, PointsIcon, LocationIcon];
+
+const ONBOARDING_SEEN_KEY = 'onboarding_seen';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Onboarding'>;
 
@@ -38,6 +45,8 @@ export default function OnboardingScreen() {
     },
   ).current;
 
+  const markSeen = () => AsyncStorage.setItem(ONBOARDING_SEEN_KEY, '1').catch(() => {});
+
   const handleNext = async () => {
     if (currentIndex < ONBOARDING_SCREENS.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
@@ -48,17 +57,20 @@ export default function OnboardingScreen() {
   };
 
   const handleSkip = () => {
+    markSeen();
     navigation.replace('Login');
   };
 
   const handleLocationAllow = async () => {
     dismissExplanation();
     await requestPermission();
+    markSeen();
     navigation.replace('Login');
   };
 
   const handleLocationDeny = () => {
     dismissExplanation();
+    markSeen();
     navigation.replace('Login');
   };
 
@@ -77,13 +89,17 @@ export default function OnboardingScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
         keyExtractor={(_, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={[styles.slide, { width }]}>
-            <View style={styles.iconPlaceholder} />
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.description}>{item.description}</Text>
-          </View>
-        )}
+        renderItem={({ index }) => {
+          const Icon = ICONS[index];
+          const item = ONBOARDING_SCREENS[index];
+          return (
+            <View style={[styles.slide, { width }]}>
+              <Icon size={200} />
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.description}>{item.description}</Text>
+            </View>
+          );
+        }}
       />
 
       <View style={styles.footer}>
@@ -133,19 +149,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  iconPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#EBF5FF',
-    marginBottom: 40,
-  },
   title: {
     fontSize: 26,
     fontWeight: '700',
     color: '#1A1A1A',
     textAlign: 'center',
     marginBottom: 16,
+    marginTop: 32,
   },
   description: {
     fontSize: 16,
