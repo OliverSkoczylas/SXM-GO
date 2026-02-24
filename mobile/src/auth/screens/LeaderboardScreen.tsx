@@ -229,7 +229,7 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  header: { backgroundColor: '#FFFFFF', paddingTop: 60, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#F3F4F6' },
+  header: { backgroundColor: '#FFFFFF', paddingTop: 40, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#F3F4F6' },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   backButton: { marginRight: 12 },
   backText: { color: '#0066CC', fontSize: 16, fontWeight: '600' },

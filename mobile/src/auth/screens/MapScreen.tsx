@@ -21,6 +21,7 @@ import { WebView } from 'react-native-webview';
 import { getLocations, checkIn, Location } from '../services/locationService';
 import { useAuth } from '../hooks/useAuth';
 import Toast from '../../shared/components/Toast';
+import AddToItineraryModal from '../components/AddToItineraryModal';
 
 export default function MapScreen() {
   const { profile, refreshProfile } = useAuth();
@@ -30,6 +31,7 @@ export default function MapScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as const });
+  const [selectedLocationForItinerary, setSelectedLocationForItinerary] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
 
   const categories = ['Beach', 'Restaurant', 'Casino', 'Attraction', 'Shopping', 'Entertainment'];
@@ -87,12 +89,16 @@ export default function MapScreen() {
     }
 
     Alert.alert(
-      'Check In',
-      `Check in at ${location.name} for ${location.points} points?`,
+      'Location Options',
+      `${location.name} (${location.points} points)`,
       [
         { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Add to Itinerary', 
+          onPress: () => setSelectedLocationForItinerary(location.id) 
+        },
         {
-          text: 'Confirm',
+          text: 'Check In',
           onPress: async () => {
             const { error } = await checkIn(location.id, location.points);
             if (error) {
@@ -122,6 +128,19 @@ export default function MapScreen() {
     }
   };
 
+  const handleFocusLocation = (location: Location) => {
+    const js = `
+      if (window.map) {
+        window.map.flyTo([${location.latitude}, ${location.longitude}], 16, {
+          animate: true,
+          duration: 1.5
+        });
+      }
+      true;
+    `;
+    webViewRef.current?.injectJavaScript(js);
+  };
+
   // HTML content for the Leaflet map
   const mapHtml = `
     <!DOCTYPE html>
@@ -140,6 +159,8 @@ export default function MapScreen() {
       <div id="map"></div>
       <script>
         const map = L.map('map', { zoomControl: false }).setView([18.0425, -63.0548], 12);
+        window.map = map; // Make accessible for injectJavaScript
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -147,30 +168,27 @@ export default function MapScreen() {
         let markers = [];
 
         window.addEventListener('message', (event) => {
-          const data = JSON.parse(event.data);
+          let data;
+          try {
+            data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          } catch (e) { return; }
+
           if (data.type === 'SET_PINS') {
-            // Clear existing markers
             markers.forEach(m => map.removeLayer(m));
             markers = [];
 
             data.payload.forEach(pin => {
               const marker = L.marker([pin.lat, pin.lng]).addTo(map);
-              
-              if (pin.visited) {
-                marker._icon.classList.add('visited-marker');
-              }
-
+              if (pin.visited) marker._icon.classList.add('visited-marker');
               marker.on('click', () => {
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                   type: 'PIN_CLICKED',
                   payload: { id: pin.id }
                 }));
               });
-              
               markers.push(marker);
             });
 
-            // Adjust view if there are pins
             if (markers.length > 0 && !window.hasAdjustedOnce) {
               const group = new L.featureGroup(markers);
               map.fitBounds(group.getBounds().pad(0.1));
@@ -179,29 +197,11 @@ export default function MapScreen() {
           }
         });
 
-        // Notify app that map is ready
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'READY' }));
       </script>
     </body>
     </html>
   `;
-
-  const renderLocationItem = ({ item }: { item: Location }) => (
-    <View style={[styles.locationCard, item.visited && styles.visitedCard]}>
-      <View style={styles.cardInfo}>
-        <Text style={styles.locationName}>{item.name}</Text>
-        <Text style={styles.locationCategory}>{item.category} • {item.points} pts</Text>
-      </View>
-      <TouchableOpacity
-        style={[styles.checkInButton, item.visited && styles.visitedButton]}
-        onPress={() => handleCheckIn(item)}
-      >
-        <Text style={[styles.checkInText, item.visited && styles.visitedText]}>
-          {item.visited ? '✓' : 'Check In'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
@@ -226,37 +226,45 @@ export default function MapScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView 
-        style={styles.mainScroll}
-        contentContainerStyle={styles.scrollContent}
+      <View style={styles.mapContainer}>
+        <WebView
+          ref={webViewRef}
+          originWhitelist={['*']}
+          source={{ html: mapHtml }}
+          onMessage={onMessage}
+          style={styles.map}
+          onLoadEnd={() => updateMapPins(filteredLocations)}
+        />
+        {isLoading && (
+          <View style={styles.loaderOverlay}>
+            <ActivityIndicator size="large" color="#0066CC" />
+          </View>
+        )}
+      </View>
+
+      <FlatList
+        data={filteredLocations}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={() => fetchLocations(true)} tintColor="#0066CC" />
         }
-      >
-        <View style={styles.mapContainer}>
-          <WebView
-            ref={webViewRef}
-            originWhitelist={['*']}
-            source={{ html: mapHtml }}
-            onMessage={onMessage}
-            style={styles.map}
-            onLoadEnd={() => updateMapPins(filteredLocations)}
-            scrollEnabled={false} // Prevent map from swallowing vertical scroll
-          />
-          {isLoading && (
-            <View style={styles.loaderOverlay}>
-              <ActivityIndicator size="large" color="#0066CC" />
-            </View>
-          )}
-        </View>
-
-        <View style={styles.listContainer}>
-          {filteredLocations.map(item => (
-            <View key={item.id} style={[styles.locationCard, item.visited && styles.visitedCard]}>
-              <View style={styles.cardInfo}>
-                <Text style={styles.locationName}>{item.name}</Text>
-                <Text style={styles.locationCategory}>{item.category} • {item.points} pts</Text>
-              </View>
+        renderItem={({ item }) => (
+          <View style={[styles.locationCard, item.visited && styles.visitedCard]}>
+            <TouchableOpacity 
+              style={styles.cardInfo}
+              onPress={() => handleFocusLocation(item)}
+            >
+              <Text style={styles.locationName}>{item.name}</Text>
+              <Text style={styles.locationCategory}>{item.category} • {item.points} pts</Text>
+            </TouchableOpacity>
+            <View style={styles.cardActions}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => setSelectedLocationForItinerary(item.id)}
+              >
+                <Text style={styles.addButtonText}>+ Add</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.checkInButton, item.visited && styles.visitedButton]}
                 onPress={() => handleCheckIn(item)}
@@ -266,14 +274,25 @@ export default function MapScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          ))}
-          {filteredLocations.length === 0 && !isLoading && (
+          </View>
+        )}
+        ListEmptyComponent={
+          !isLoading ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No locations found in this category.</Text>
             </View>
-          )}
-        </View>
-      </ScrollView>
+          ) : null
+        }
+      />
+
+      <AddToItineraryModal
+        visible={!!selectedLocationForItinerary}
+        onClose={() => {
+          setSelectedLocationForItinerary(null);
+          setToast({ visible: true, message: 'Added to itinerary!', type: 'success' });
+        }}
+        locationId={selectedLocationForItinerary || ''}
+      />
 
       <Toast
         message={toast.message}
@@ -287,25 +306,26 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#FFFFFF', paddingTop: 60, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#F3F4F6' },
+  header: { backgroundColor: '#FFFFFF', paddingTop: 40, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#F3F4F6' },
   title: { fontSize: 28, fontWeight: '700', color: '#1A1A1A', marginBottom: 12 },
   categoryBar: { flexDirection: 'row' },
   categoryTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', marginRight: 8 },
   activeTab: { backgroundColor: '#0066CC' },
   categoryText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
   activeTabText: { color: '#FFFFFF' },
-  mainScroll: { flex: 1 },
-  scrollContent: { paddingBottom: 24 },
   mapContainer: { height: 350, backgroundColor: '#E5E7EB' },
   map: { flex: 1 },
   loaderOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.7)', justifyContent: 'center', alignItems: 'center' },
-  listContainer: { padding: 16 },
+  listContent: { padding: 16, paddingBottom: 100 },
   locationCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 12, borderRadius: 12, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   visitedCard: { opacity: 0.7 },
   cardInfo: { flex: 1 },
   locationName: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
   locationCategory: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  checkInButton: { backgroundColor: '#0066CC', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 },
+  cardActions: { flexDirection: 'row', gap: 8 },
+  addButton: { borderWidth: 1, borderColor: '#0066CC', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
+  addButtonText: { color: '#0066CC', fontWeight: '600', fontSize: 12 },
+  checkInButton: { backgroundColor: '#0066CC', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
   visitedButton: { backgroundColor: '#E5E7EB' },
   checkInText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12 },
   visitedText: { color: '#9CA3AF' },

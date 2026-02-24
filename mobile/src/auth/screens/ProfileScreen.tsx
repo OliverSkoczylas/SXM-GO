@@ -173,6 +173,12 @@ export default function ProfileScreen() {
       <View style={styles.menuSection}>
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => navigation.navigate('ItineraryList')}
+        >
+          <Text style={styles.menuItemText}>My Itineraries</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('Settings')}
         >
           <Text style={styles.menuItemText}>Settings</Text>
@@ -203,7 +209,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { paddingHorizontal: 24, paddingBottom: 40 },
+  content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 8 },
   errorSub: { fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24 },

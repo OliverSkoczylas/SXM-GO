@@ -3,18 +3,25 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- A clean, stylized 'S' representing the path/go concept -->
+    
+    <!-- Outer circle for better framing in adaptive icons -->
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M54,20 A34,34 0 1,1 53.99,20 Z" />
+
+    <!-- Stylized 'G' -->
     <path
         android:fillColor="@color/ic_launcher_foreground_color"
-        android:pathData="M30,70 L45,70 C45,70 55,70 55,60 C55,50 45,50 45,50 L35,50 C35,50 25,50 25,40 C25,30 35,30 35,30 L50,30"
-        android:strokeWidth="5"
-        android:strokeColor="@color/ic_launcher_foreground_color"
-        android:strokeLineCap="round"/>
+        android:pathData="M42,44 C38,44 34,48 34,54 C34,60 38,64 42,64 L48,64 L48,56 L42,56 L42,52 L54,52 L54,68 L42,68 C34,68 28,62 28,54 C28,46 34,40 42,40 L52,40 L52,46 L42,46 Z" />
+
+    <!-- Stylized 'O' -->
     <path
         android:fillColor="@color/ic_launcher_foreground_color"
-        android:pathData="M65,45 L75,55 L65,65"
-        android:strokeWidth="5"
-        android:strokeColor="@color/ic_launcher_foreground_color"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"/>
+        android:pathData="M66,40 C74,40 80,46 80,54 C80,62 74,68 66,68 C58,68 52,62 52,54 C52,46 58,40 66,40 M66,46 C62,46 58,50 58,54 C58,58 62,62 66,62 C70,62 74,58 74,54 C74,50 70,46 66,46 Z" />
+
+    <!-- Little Arrow / Compass Needle -->
+    <path
+        android:fillColor="#FFD84D"
+        android:pathData="M84,36 L92,32 L88,44 Z" />
+
 </vector>

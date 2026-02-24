@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#007AFF</color>
+    <!-- Vibrant Teal/Blue for the brand -->
+    <color name="ic_launcher_background">#00C9B1</color>
     <color name="ic_launcher_foreground_color">#FFFFFF</color>
 </resources>

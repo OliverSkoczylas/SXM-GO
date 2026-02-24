@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { GoogleIcon, AppleIcon, FacebookIcon } from './SocialIcons';
 
 interface SocialLoginButtonsProps {
   onGoogle: () => void;
@@ -30,6 +31,9 @@ export default function SocialLoginButtons({
         onPress={onGoogle}
         disabled={disabled}
       >
+        <View style={styles.iconContainer}>
+          <GoogleIcon size={20} />
+        </View>
         <Text style={[styles.socialButtonText, styles.googleText]}>Continue with Google</Text>
       </TouchableOpacity>
 
@@ -39,6 +43,9 @@ export default function SocialLoginButtons({
           onPress={onApple}
           disabled={disabled}
         >
+          <View style={styles.iconContainer}>
+            <AppleIcon size={20} />
+          </View>
           <Text style={[styles.socialButtonText, styles.appleText]}>Continue with Apple</Text>
         </TouchableOpacity>
       )}
@@ -48,6 +55,9 @@ export default function SocialLoginButtons({
         onPress={onFacebook}
         disabled={disabled}
       >
+        <View style={styles.iconContainer}>
+          <FacebookIcon size={20} />
+        </View>
         <Text style={[styles.socialButtonText, styles.facebookText]}>Continue with Facebook</Text>
       </TouchableOpacity>
     </View>
@@ -75,11 +85,16 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   socialButton: {
+    flexDirection: 'row',
     paddingVertical: 13,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 1,
+  },
+  iconContainer: {
+    marginRight: 12,
   },
   buttonDisabled: {
     opacity: 0.5,

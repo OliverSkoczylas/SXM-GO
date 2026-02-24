@@ -52,12 +52,19 @@ export type ProfileStackParamList = {
   Settings: undefined;
   PrivacySettings: undefined;
   ChangePassword: undefined;
+  ItineraryList: undefined;
+  ItineraryDetail: { id: string };
+  CreateItinerary: undefined;
 };
 
 // ── Navigators ──
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+
+import ItineraryListScreen from '../screens/ItineraryListScreen';
+import ItineraryDetailScreen from '../screens/ItineraryDetailScreen';
+import CreateItineraryScreen from '../screens/CreateItineraryScreen';
 
 function ProfileStackNavigator() {
   return (
@@ -81,6 +88,21 @@ function ProfileStackNavigator() {
         name="ChangePassword"
         component={ChangePasswordScreen}
         options={{ headerTitle: 'Change Password' }}
+      />
+      <ProfileStack.Screen
+        name="ItineraryList"
+        component={ItineraryListScreen}
+        options={{ headerTitle: 'Itineraries' }}
+      />
+      <ProfileStack.Screen
+        name="ItineraryDetail"
+        component={ItineraryDetailScreen}
+        options={{ headerTitle: 'Itinerary Details' }}
+      />
+      <ProfileStack.Screen
+        name="CreateItinerary"
+        component={CreateItineraryScreen}
+        options={{ headerTitle: 'New Itinerary' }}
       />
     </ProfileStack.Navigator>
   );
