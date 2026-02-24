@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { signInSchema, SignInInput } from '../utils/validation';
+import { signInSchema } from '../utils/validation';
 import { AUTH_ERRORS } from '../constants/authConstants';
 
 interface LoginFormProps {
@@ -60,7 +60,7 @@ export default function LoginForm({ onSubmit, onForgotPassword }: LoginFormProps
       <View style={styles.field}>
         <Text style={styles.label}>Email</Text>
         <TextInput
-          style={[styles.input, errors.email && styles.inputError]}
+          style={[styles.input, errors.email ? styles.inputError : undefined]}
           value={email}
           onChangeText={setEmail}
           placeholder="you@example.com"
@@ -76,7 +76,7 @@ export default function LoginForm({ onSubmit, onForgotPassword }: LoginFormProps
       <View style={styles.field}>
         <Text style={styles.label}>Password</Text>
         <TextInput
-          style={[styles.input, errors.password && styles.inputError]}
+          style={[styles.input, errors.password ? styles.inputError : undefined]}
           value={password}
           onChangeText={setPassword}
           placeholder="Enter your password"

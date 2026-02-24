@@ -14,12 +14,14 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { updatePassword } from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 import { changePasswordSchema } from '../utils/validation';
 import { AUTH_MESSAGES, AUTH_ERRORS } from '../constants/authConstants';
-import Toast from '../../../shared/components/Toast';
+import Toast from '../../shared/components/Toast';
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation();
+  const { user, signInWithEmail } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -53,6 +55,15 @@ export default function ChangePasswordScreen() {
     }
 
     setIsSubmitting(true);
+
+    // Re-authenticate before changing password to verify identity
+    const { error: authError } = await signInWithEmail(user!.email!, currentPassword);
+    if (authError) {
+      setIsSubmitting(false);
+      setErrors({ currentPassword: 'Current password is incorrect.' });
+      return;
+    }
+
     const { error } = await updatePassword(newPassword);
     setIsSubmitting(false);
 
@@ -73,7 +84,7 @@ export default function ChangePasswordScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Current Password</Text>
           <TextInput
-            style={[styles.input, errors.currentPassword && styles.inputError]}
+            style={[styles.input, errors.currentPassword ? styles.inputError : undefined]}
             value={currentPassword}
             onChangeText={setCurrentPassword}
             secureTextEntry
@@ -88,7 +99,7 @@ export default function ChangePasswordScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>New Password</Text>
           <TextInput
-            style={[styles.input, errors.newPassword && styles.inputError]}
+            style={[styles.input, errors.newPassword ? styles.inputError : undefined]}
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry
@@ -102,7 +113,7 @@ export default function ChangePasswordScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Confirm New Password</Text>
           <TextInput
-            style={[styles.input, errors.confirmPassword && styles.inputError]}
+            style={[styles.input, errors.confirmPassword ? styles.inputError : undefined]}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry

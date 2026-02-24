@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply from: new File(rootDir, "../node_modules/react-native-config/android/dotenv.gradle")
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -74,13 +75,18 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.temprnproject"
+    namespace "com.sxmgo"
     defaultConfig {
-        applicationId "com.temprnproject"
+        applicationId "com.sxmgo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        // Expose .env values as Android resource strings for use in AndroidManifest.xml
+        resValue "string", "facebook_app_id", project.env.get("FACEBOOK_APP_ID") ?: ""
+        resValue "string", "facebook_client_token", project.env.get("FACEBOOK_CLIENT_TOKEN") ?: ""
+        resValue "string", "fb_login_protocol_scheme", "fb" + (project.env.get("FACEBOOK_APP_ID") ?: "")
     }
     signingConfigs {
         debug {
@@ -99,7 +105,7 @@ android {
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 }
@@ -107,7 +113,8 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation("com.facebook.react:flipper-integration")
+    debugImplementation("com.facebook.react:flipper-integration")
+    implementation(project(":react-native-config"))
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

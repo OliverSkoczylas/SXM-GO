@@ -17,8 +17,8 @@ import { useAuth } from '../hooks/useAuth';
 import { usePreferences } from '../hooks/usePreferences';
 import { AUTH_MESSAGES } from '../constants/authConstants';
 import type { Language, DistanceUnit, Theme } from '../types/auth.types';
-import Toast from '../../../shared/components/Toast';
-import LoadingSpinner from '../../../shared/components/LoadingSpinner';
+import Toast from '../../shared/components/Toast';
+import LoadingSpinner from '../../shared/components/LoadingSpinner';
 
 const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'en', label: 'English' },

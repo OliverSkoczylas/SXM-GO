@@ -16,15 +16,17 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/AppNavigator';
 import { useProfile } from '../hooks/useProfile';
+import { useAuth } from '../hooks/useAuth';
 import { displayNameSchema, bioSchema } from '../utils/validation';
 import { AUTH_MESSAGES } from '../constants/authConstants';
 import AvatarPicker from '../components/AvatarPicker';
-import Toast from '../../../shared/components/Toast';
+import Toast from '../../shared/components/Toast';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
+  const auth = useAuth();
   const { profile, isUpdating, updateProfile, uploadAvatar, removeAvatar } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(profile?.display_name ?? '');
@@ -55,7 +57,14 @@ export default function ProfileScreen() {
   if (!profile) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0066CC" />
+        <Text style={styles.errorTitle}>Profile Not Found</Text>
+        <Text style={styles.errorSub}>We couldn't load your profile data. This can happen if the initial setup is incomplete.</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => auth.signOut()}
+        >
+          <Text style={styles.retryButtonText}>Sign Out & Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -73,7 +82,7 @@ export default function ProfileScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Name</Text>
             <TextInput
-              style={[styles.input, fieldErrors.displayName && styles.inputError]}
+              style={[styles.input, fieldErrors.displayName ? styles.inputError : undefined]}
               value={editName}
               onChangeText={setEditName}
               autoCapitalize="words"
@@ -85,7 +94,7 @@ export default function ProfileScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Bio</Text>
             <TextInput
-              style={[styles.input, styles.bioInput, fieldErrors.bio && styles.inputError]}
+              style={[styles.input, styles.bioInput, fieldErrors.bio ? styles.inputError : undefined]}
               value={editBio}
               onChangeText={setEditBio}
               multiline
@@ -148,6 +157,19 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {profile.achievements && profile.achievements.length > 0 && (
+        <View style={styles.achievementsSection}>
+          <Text style={styles.sectionTitle}>Achievements</Text>
+          <View style={styles.badgeRow}>
+            {profile.achievements.map((badge, i) => (
+              <View key={i} style={styles.badge}>
+                <Text style={styles.badgeText}>{badge}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View style={styles.menuSection}>
         <TouchableOpacity
           style={styles.menuItem}
@@ -182,7 +204,11 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   content: { paddingHorizontal: 24, paddingBottom: 40 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 8 },
+  errorSub: { fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  retryButton: { backgroundColor: '#0066CC', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  retryButtonText: { color: '#FFFFFF', fontWeight: '600' },
   viewSection: { alignItems: 'center', marginBottom: 24 },
   displayName: { fontSize: 24, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
   email: { fontSize: 14, color: '#6B7280', marginBottom: 8 },
@@ -242,6 +268,25 @@ const styles = StyleSheet.create({
   stat: { alignItems: 'center' },
   statValue: { fontSize: 24, fontWeight: '700', color: '#1A1A1A' },
   statLabel: { fontSize: 13, color: '#6B7280', marginTop: 4 },
+  achievementsSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  badge: {
+    backgroundColor: '#EBF5FF',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  badgeText: { fontSize: 13, color: '#0066CC', fontWeight: '500' },
   menuSection: { gap: 1 },
   menuItem: {
     paddingVertical: 16,

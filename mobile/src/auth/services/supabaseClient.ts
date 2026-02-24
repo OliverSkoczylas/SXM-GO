@@ -10,13 +10,29 @@ import { secureStorage } from './secureStorage';
 // Supabase JS client calls these methods to persist/restore sessions.
 const SecureStorageAdapter = {
   getItem: async (key: string): Promise<string | null> => {
-    return secureStorage.get(key);
+    try {
+      return await secureStorage.get(key);
+    } catch (e) {
+      console.warn('[SupabaseClient] Failed to get from storage:', e);
+      return null;
+    }
   },
   setItem: async (key: string, value: string): Promise<void> => {
-    await secureStorage.set(key, value);
+    try {
+      // Non-blocking set to prevent slow storage from timing out login
+      secureStorage.set(key, value).catch(e => 
+        console.warn('[SupabaseClient] Failed to set storage:', e)
+      );
+    } catch (e) {
+      console.warn('[SupabaseClient] Immediate storage failure:', e);
+    }
   },
   removeItem: async (key: string): Promise<void> => {
-    await secureStorage.remove(key);
+    try {
+      await secureStorage.remove(key);
+    } catch (e) {
+      console.warn('[SupabaseClient] Failed to remove from storage:', e);
+    }
   },
 };
 

@@ -18,13 +18,13 @@ import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import * as privacyService from '../services/privacyService';
 import { AUTH_MESSAGES } from '../constants/authConstants';
-import { APP_CONFIG } from '../../../shared/config/app.config';
+import { APP_CONFIG } from '../../shared/config/app.config';
 import type { ConsentState, DeletionRequest } from '../types/auth.types';
-import Toast from '../../../shared/components/Toast';
+import Toast from '../../shared/components/Toast';
 
 export default function PrivacySettingsScreen() {
   const { user, signOut } = useAuth();
-  const { profile, setLocationTracking } = useProfile();
+  const { profile, setLocationTracking, updateProfile } = useProfile();
   const [consentState, setConsentState] = useState<ConsentState>({});
   const [pendingDeletion, setPendingDeletion] = useState<DeletionRequest | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -57,6 +57,11 @@ export default function PrivacySettingsScreen() {
   const handleAnalyticsToggle = async (enabled: boolean) => {
     await privacyService.logConsent(user!.id, 'analytics', enabled);
     setConsentState((prev) => ({ ...prev, analytics: enabled }));
+  };
+
+  const handleCcpaToggle = async (optOut: boolean) => {
+    await updateProfile({ ccpa_opt_out: optOut });
+    setToast({ visible: true, message: AUTH_MESSAGES.CONSENT_UPDATED, type: 'info' });
   };
 
   const handleExportData = async () => {
@@ -160,6 +165,17 @@ export default function PrivacySettingsScreen() {
           <Switch
             value={consentState.analytics ?? true}
             onValueChange={handleAnalyticsToggle}
+            trackColor={{ true: '#0066CC' }}
+          />
+        </View>
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleInfo}>
+            <Text style={styles.toggleLabel}>Do Not Sell My Data</Text>
+            <Text style={styles.toggleDescription}>Opt out of data sharing with third parties (CCPA)</Text>
+          </View>
+          <Switch
+            value={profile?.ccpa_opt_out ?? false}
+            onValueChange={handleCcpaToggle}
             trackColor={{ true: '#0066CC' }}
           />
         </View>

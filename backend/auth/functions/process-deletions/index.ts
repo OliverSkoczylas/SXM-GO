@@ -23,18 +23,19 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Verify this is an authorized call (service role or matching secret)
+    // Verify this is an authorized call (service role key or matching webhook secret)
     const authHeader = req.headers.get('Authorization');
     const webhookSecret = Deno.env.get('DELETION_WEBHOOK_SECRET');
+    const providedSecret = req.headers.get('X-Webhook-Secret');
 
-    if (webhookSecret) {
-      const providedSecret = req.headers.get('X-Webhook-Secret');
-      if (providedSecret !== webhookSecret && authHeader !== `Bearer ${serviceRoleKey}`) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    const validServiceRole = authHeader === `Bearer ${serviceRoleKey}`;
+    const validWebhookSecret = webhookSecret != null && providedSecret === webhookSecret;
+
+    if (!validServiceRole && !validWebhookSecret) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);

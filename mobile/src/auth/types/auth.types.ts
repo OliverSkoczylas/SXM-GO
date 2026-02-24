@@ -10,6 +10,7 @@ export interface Profile {
   bio: string;
   total_points: number;
   visit_count: number;
+  achievements?: string[];
   location_tracking_enabled: boolean;
   gdpr_consent_at: string | null;
   ccpa_opt_out: boolean;
@@ -20,7 +21,7 @@ export interface Profile {
 }
 
 export type ProfileUpdate = Partial<
-  Pick<Profile, 'display_name' | 'avatar_url' | 'bio' | 'location_tracking_enabled' | 'marketing_opt_in'>
+  Pick<Profile, 'display_name' | 'avatar_url' | 'bio' | 'location_tracking_enabled' | 'marketing_opt_in' | 'ccpa_opt_out'>
 >;
 
 // ── User Preferences (maps to public.user_preferences table) ──
@@ -93,6 +94,8 @@ export interface AuthState {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  preferences: UserPreferences | null;
+  onboardingSeen: boolean;
 }
 
 // ── Auth Result (returned by auth operations) ──
@@ -101,4 +104,14 @@ export interface AuthResult {
   user: User | null;
   session: Session | null;
   error: AuthError | null;
+}
+
+// ── Leaderboard ──
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  points: number;
 }

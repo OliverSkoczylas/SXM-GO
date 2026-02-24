@@ -6,13 +6,24 @@
 import * as Keychain from 'react-native-keychain';
 
 const SERVICE_PREFIX = 'com.sxmgo.auth';
+const KEYCHAIN_TIMEOUT_MS = 5000;
+
+// Wraps a Keychain promise with a timeout so a hung Keystore never blocks auth.
+function withKeychainTimeout<T>(promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Keychain timeout')), KEYCHAIN_TIMEOUT_MS),
+    ),
+  ]);
+}
 
 export const secureStorage = {
   async get(key: string): Promise<string | null> {
     try {
-      const credentials = await Keychain.getGenericPassword({
-        service: `${SERVICE_PREFIX}.${key}`,
-      });
+      const credentials = await withKeychainTimeout(
+        Keychain.getGenericPassword({ service: `${SERVICE_PREFIX}.${key}` }),
+      );
       if (credentials) {
         return credentials.password;
       }
@@ -23,19 +34,25 @@ export const secureStorage = {
   },
 
   async set(key: string, value: string): Promise<void> {
-    await Keychain.setGenericPassword(key, value, {
-      service: `${SERVICE_PREFIX}.${key}`,
-      accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-      // WHEN_UNLOCKED_THIS_DEVICE_ONLY: token is not included in backups
-      // and is only accessible when the device is unlocked.
-    });
+    try {
+      await withKeychainTimeout(
+        Keychain.setGenericPassword(key, value, {
+          service: `${SERVICE_PREFIX}.${key}`,
+          accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+          // WHEN_UNLOCKED_THIS_DEVICE_ONLY: token is not included in backups
+          // and is only accessible when the device is unlocked.
+        }),
+      );
+    } catch (err: any) {
+      console.warn('[SecureStorage] set failed (session will not persist):', err?.message);
+    }
   },
 
   async remove(key: string): Promise<void> {
     try {
-      await Keychain.resetGenericPassword({
-        service: `${SERVICE_PREFIX}.${key}`,
-      });
+      await withKeychainTimeout(
+        Keychain.resetGenericPassword({ service: `${SERVICE_PREFIX}.${key}` }),
+      );
     } catch {
       // Ignore errors when removing non-existent keys
     }

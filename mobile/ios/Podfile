@@ -25,8 +25,16 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'TempRNProject' do
+target 'SxmGo' do
   config = use_native_modules!
+
+  # react-native-permissions: specify which permission handlers to include (UX-004)
+  # Only include what the app actually uses to keep binary size small.
+  permissions_path = '../node_modules/react-native-permissions/ios'
+  pod 'RNPermissions', :path => permissions_path
+  pod 'Permission-LocationWhenInUse', :path => "#{permissions_path}/LocationWhenInUse"
+  pod 'Permission-Camera', :path => "#{permissions_path}/Camera"
+  pod 'Permission-PhotoLibrary', :path => "#{permissions_path}/PhotoLibrary"
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -39,7 +47,7 @@ target 'TempRNProject' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'TempRNProjectTests' do
+  target 'SxmGoTests' do
     inherit! :complete
     # Pods for testing
   end

@@ -1,10 +1,12 @@
 // Profile photo picker component
 // FR-002: User profiles shall store profile photo
+// UX-004: Request photo library permission before opening picker
 
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, Text, Alert } from 'react-native';
 import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
 import { APP_CONFIG } from '../../shared/config/app.config';
+import { requestPhotoLibraryPermission } from '../../shared/services/permissionService';
 
 interface AvatarPickerProps {
   avatarUrl: string | null;
@@ -19,7 +21,10 @@ export default function AvatarPicker({
   onRemove,
   size = 100,
 }: AvatarPickerProps) {
-  const handlePress = () => {
+  const handlePress = async () => {
+    const permission = await requestPhotoLibraryPermission();
+    if (permission !== 'granted') return;
+
     launchImageLibrary(
       {
         mediaType: 'photo',
@@ -33,7 +38,8 @@ export default function AvatarPicker({
 
         const asset = response.assets?.[0];
         if (asset?.fileSize && asset.fileSize > APP_CONFIG.maxAvatarSizeBytes) {
-          return; // Could show a toast here
+          Alert.alert('Image too large', 'Please choose an image under 5MB.');
+          return;
         }
 
         onImageSelected(response);

@@ -20,7 +20,7 @@ import { AUTH_ERRORS, AUTH_MESSAGES } from '../constants/authConstants';
 import * as privacyService from '../services/privacyService';
 import SignUpForm from '../components/SignUpForm';
 import SocialLoginButtons from '../components/SocialLoginButtons';
-import Toast from '../../../shared/components/Toast';
+import Toast from '../../shared/components/Toast';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SignUp'>;
 

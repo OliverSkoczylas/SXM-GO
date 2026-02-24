@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { signUpSchema, SignUpInput } from '../utils/validation';
+import { signUpSchema } from '../utils/validation';
 import { AUTH_ERRORS } from '../constants/authConstants';
 import ConsentCheckbox from './ConsentCheckbox';
 
@@ -70,7 +70,7 @@ export default function SignUpForm({ onSubmit }: SignUpFormProps) {
       <View style={styles.field}>
         <Text style={styles.label}>Name</Text>
         <TextInput
-          style={[styles.input, errors.displayName && styles.inputError]}
+          style={[styles.input, errors.displayName ? styles.inputError : undefined]}
           value={displayName}
           onChangeText={setDisplayName}
           placeholder="Your name"
@@ -84,7 +84,7 @@ export default function SignUpForm({ onSubmit }: SignUpFormProps) {
       <View style={styles.field}>
         <Text style={styles.label}>Email</Text>
         <TextInput
-          style={[styles.input, errors.email && styles.inputError]}
+          style={[styles.input, errors.email ? styles.inputError : undefined]}
           value={email}
           onChangeText={setEmail}
           placeholder="you@example.com"
@@ -100,7 +100,7 @@ export default function SignUpForm({ onSubmit }: SignUpFormProps) {
       <View style={styles.field}>
         <Text style={styles.label}>Password</Text>
         <TextInput
-          style={[styles.input, errors.password && styles.inputError]}
+          style={[styles.input, errors.password ? styles.inputError : undefined]}
           value={password}
           onChangeText={setPassword}
           placeholder="Min 8 chars, uppercase, number, symbol"

@@ -8,7 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../hooks/useAuth';
 import { AuthNavigator } from './AuthNavigator';
 import { AppNavigator } from './AppNavigator';
-import LoadingSpinner from '../../../shared/components/LoadingSpinner';
+import LoadingSpinner from '../../shared/components/LoadingSpinner';
 
 export function RootNavigator() {
   const { isLoading, isAuthenticated } = useAuth();
