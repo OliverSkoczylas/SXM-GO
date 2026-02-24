@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A clean, stylized 'S' representing the path/go concept -->
+    <path
+        android:fillColor="@color/ic_launcher_foreground_color"
+        android:pathData="M30,70 L45,70 C45,70 55,70 55,60 C55,50 45,50 45,50 L35,50 C35,50 25,50 25,40 C25,30 35,30 35,30 L50,30"
+        android:strokeWidth="5"
+        android:strokeColor="@color/ic_launcher_foreground_color"
+        android:strokeLineCap="round"/>
+    <path
+        android:fillColor="@color/ic_launcher_foreground_color"
+        android:pathData="M65,45 L75,55 L65,65"
+        android:strokeWidth="5"
+        android:strokeColor="@color/ic_launcher_foreground_color"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>
