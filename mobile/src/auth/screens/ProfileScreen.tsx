@@ -1,8 +1,9 @@
 // Profile view/edit screen
 // FR-002: Display profile data
 // FR-005: Update profile info
+// FR-042: Point activity feed
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { getActivityFeed, type ActivityItem } from '../services/locationService';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/AppNavigator';
@@ -33,6 +35,13 @@ export default function ProfileScreen() {
   const [editBio, setEditBio] = useState(profile?.bio ?? '');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as const });
+  const [activityFeed, setActivityFeed] = useState<ActivityItem[]>([]);
+
+  useEffect(() => {
+    getActivityFeed(10).then(({ data }) => {
+      if (data) setActivityFeed(data);
+    });
+  }, []);
 
   const handleSave = async () => {
     setFieldErrors({});
@@ -170,6 +179,26 @@ export default function ProfileScreen() {
         </View>
       )}
 
+      {activityFeed.length > 0 && (
+        <View style={styles.achievementsSection}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          {activityFeed.map((item) => {
+            const date = new Date(item.created_at);
+            const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            return (
+              <View key={item.id} style={styles.activityRow}>
+                <View style={styles.activityDot} />
+                <View style={styles.activityInfo}>
+                  <Text style={styles.activityName}>{item.location_name}</Text>
+                  <Text style={styles.activityCategory}>{item.category} · {dateStr}</Text>
+                </View>
+                <Text style={styles.activityPoints}>+{item.points}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       <View style={styles.menuSection}>
         <TouchableOpacity
           style={styles.menuItem}
@@ -293,6 +322,24 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   badgeText: { fontSize: 13, color: '#0066CC', fontWeight: '500' },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: '#F9FAFB',
+  },
+  activityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0066CC',
+    marginRight: 10,
+  },
+  activityInfo: { flex: 1 },
+  activityName: { fontSize: 14, fontWeight: '600', color: '#1A1A1A' },
+  activityCategory: { fontSize: 12, color: '#6B7280', marginTop: 1 },
+  activityPoints: { fontSize: 14, fontWeight: '700', color: '#059669' },
   menuSection: { gap: 1 },
   menuItem: {
     paddingVertical: 16,

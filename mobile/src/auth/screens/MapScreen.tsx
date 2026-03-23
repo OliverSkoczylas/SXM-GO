@@ -1,7 +1,8 @@
 // Map screen using OpenStreetMap via WebView
 // This provides a free, interactive map without requiring Google Maps API keys.
 // FR-012 to FR-023: Interactive map and location pins
-// FR-027 to FR-031: Check-in mechanism
+// FR-016: Real-time user location dot
+// FR-027 to FR-031: Check-in mechanism with GPS proximity validation
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
@@ -23,6 +24,36 @@ import { useAuth } from '../hooks/useAuth';
 import Toast from '../../shared/components/Toast';
 import AddToItineraryModal from '../components/AddToItineraryModal';
 
+// FR-016: Get user's GPS coordinates
+function getUserLocation(): Promise<{ lat: number; lng: number } | null> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { timeout: 5000, maximumAge: 60000, enableHighAccuracy: true },
+    );
+  });
+}
+
+// FR-027/028: Haversine distance in metres between two GPS points
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const CHECK_IN_RADIUS_METRES = 150;
+
 export default function MapScreen() {
   const { profile, refreshProfile } = useAuth();
   const [locations, setLocations] = useState<Location[]>([]);
@@ -35,6 +66,25 @@ export default function MapScreen() {
   const webViewRef = useRef<WebView>(null);
 
   const categories = ['Beach', 'Restaurant', 'Casino', 'Attraction', 'Shopping', 'Entertainment'];
+
+  // FR-016: Periodically send user location to the map WebView
+  useEffect(() => {
+    let active = true;
+    const sendLocation = async () => {
+      const loc = await getUserLocation();
+      if (loc && active) {
+        webViewRef.current?.postMessage(
+          JSON.stringify({ type: 'SET_USER_LOCATION', payload: loc }),
+        );
+      }
+    };
+    sendLocation();
+    const interval = setInterval(sendLocation, 15000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const fetchLocations = useCallback(async (refreshing = false) => {
     if (!refreshing) setIsLoading(true);
@@ -82,6 +132,17 @@ export default function MapScreen() {
     updateMapPins(filtered);
   };
 
+  const doCheckIn = async (location: Location) => {
+    const { error } = await checkIn(location.id, location.points);
+    if (error) {
+      Alert.alert('Error', error.message || 'Failed to check in.');
+    } else {
+      setToast({ visible: true, message: `Checked in! +${location.points} points`, type: 'success' });
+      fetchLocations(true);
+      refreshProfile();
+    }
+  };
+
   const handleCheckIn = async (location: Location) => {
     if (location.visited) {
       Alert.alert('Already Visited', 'You have already checked in at this location.');
@@ -93,24 +154,35 @@ export default function MapScreen() {
       `${location.name} (${location.points} points)`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Add to Itinerary', 
-          onPress: () => setSelectedLocationForItinerary(location.id) 
+        {
+          text: 'Add to Itinerary',
+          onPress: () => setSelectedLocationForItinerary(location.id),
         },
         {
           text: 'Check In',
           onPress: async () => {
-            const { error } = await checkIn(location.id, location.points);
-            if (error) {
-              Alert.alert('Error', error.message || 'Failed to check in.');
-            } else {
-              setToast({ visible: true, message: `Checked in! +${location.points} points`, type: 'success' });
-              fetchLocations(true);
-              refreshProfile();
+            // FR-027/028: Verify GPS proximity before allowing check-in
+            const userLoc = await getUserLocation();
+            if (userLoc) {
+              const distance = haversineDistance(
+                userLoc.lat,
+                userLoc.lng,
+                location.latitude,
+                location.longitude,
+              );
+              if (distance > CHECK_IN_RADIUS_METRES) {
+                Alert.alert(
+                  'Too Far Away',
+                  `You are ${Math.round(distance)}m from ${location.name}. You must be within ${CHECK_IN_RADIUS_METRES}m to check in.`,
+                  [{ text: 'OK' }],
+                );
+                return;
+              }
             }
+            await doCheckIn(location);
           },
         },
-      ]
+      ],
     );
   };
 
@@ -193,6 +265,30 @@ export default function MapScreen() {
               const group = new L.featureGroup(markers);
               map.fitBounds(group.getBounds().pad(0.1));
               window.hasAdjustedOnce = true;
+            }
+          }
+
+          // FR-016: Show user's real-time location as a blue dot
+          if (data.type === 'SET_USER_LOCATION') {
+            const { lat, lng } = data.payload;
+            if (window.userLocationCircle) {
+              window.userLocationCircle.setLatLng([lat, lng]);
+              window.userLocationDot.setLatLng([lat, lng]);
+            } else {
+              window.userLocationCircle = L.circle([lat, lng], {
+                radius: 40,
+                color: '#0066CC',
+                fillColor: '#0066CC',
+                fillOpacity: 0.15,
+                weight: 1
+              }).addTo(map);
+              window.userLocationDot = L.circleMarker([lat, lng], {
+                radius: 7,
+                color: '#FFFFFF',
+                weight: 2,
+                fillColor: '#0066CC',
+                fillOpacity: 1
+              }).addTo(map);
             }
           }
         });

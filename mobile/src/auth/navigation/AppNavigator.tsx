@@ -3,7 +3,7 @@
 // Dev 1 sets up the shell. Other devs fill in their tab screens.
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import ChallengesScreen from '../screens/ChallengesScreen';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -19,24 +19,6 @@ import {
   ProfileTabIcon,
 } from '../components/TabIcons';
 
-// ── Placeholder screens for other devs ──
-
-function PlaceholderScreen({ title }: { title: string }) {
-  return (
-    <View style={placeholderStyles.container}>
-      <Text style={placeholderStyles.text}>{title}</Text>
-      <Text style={placeholderStyles.subtext}>Coming soon</Text>
-    </View>
-  );
-}
-
-const ChallengesPlaceholder = () => <PlaceholderScreen title="Challenges" />;   // Dev 3
-
-const placeholderStyles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
-  text: { fontSize: 20, fontWeight: '600', color: '#1A1A1A' },
-  subtext: { fontSize: 14, color: '#6B7280', marginTop: 4 },
-});
 
 // ── Type definitions ──
 
@@ -142,7 +124,7 @@ export function AppNavigator() {
       />
       <Tab.Screen
         name="ChallengesTab"
-        component={ChallengesPlaceholder}
+        component={ChallengesScreen}
         options={{ tabBarLabel: 'Challenges' }}
       />
       <Tab.Screen

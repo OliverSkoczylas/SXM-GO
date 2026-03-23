@@ -53,6 +53,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
   try {
     const { GoogleSignin } = require('@react-native-google-signin/google-signin');
     await GoogleSignin.hasPlayServices();
+    await GoogleSignin.signOut();
     const response = await GoogleSignin.signIn();
     // @ts-expect-error - v11 API returns { data: { idToken } } but types may not match
     const idToken = response.data?.idToken ?? response.idToken;

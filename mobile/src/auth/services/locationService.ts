@@ -49,6 +49,42 @@ export async function getLocations(): Promise<{ data: Location[] | null; error: 
   return { data: locations, error: null };
 }
 
+// FR-042: Activity feed — recent check-ins with location details
+export interface ActivityItem {
+  id: string;
+  location_name: string;
+  category: string;
+  points: number;
+  created_at: string;
+}
+
+export async function getActivityFeed(
+  limit = 10,
+): Promise<{ data: ActivityItem[] | null; error: any }> {
+  const supabase = getSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { data: null, error: { message: 'Not authenticated' } };
+
+  const { data, error } = await supabase
+    .from('check_ins')
+    .select('id, points_earned, created_at, locations(name, category)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) return { data: null, error };
+
+  const items: ActivityItem[] = (data || []).map((row: any) => ({
+    id: row.id,
+    location_name: row.locations?.name ?? 'Unknown location',
+    category: row.locations?.category ?? '',
+    points: row.points_earned,
+    created_at: row.created_at,
+  }));
+
+  return { data: items, error: null };
+}
+
 export async function checkIn(locationId: string, points: number): Promise<{ error: any }> {
   const supabase = getSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();

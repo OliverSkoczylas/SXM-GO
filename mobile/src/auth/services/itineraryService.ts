@@ -45,12 +45,26 @@ export const itineraryService = {
       .single();
 
     if (error) throw error;
-    
+
     // Sort items by order_index
     if (data && data.items) {
       data.items.sort((a: any, b: any) => a.order_index - b.order_index);
     }
-    
+
+    // FR-052: Mark each item as visited based on user's check-ins
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && data?.items?.length) {
+      const { data: checkIns } = await supabase
+        .from('check_ins')
+        .select('location_id')
+        .eq('user_id', user.id);
+      const visitedIds = new Set((checkIns || []).map((c: any) => c.location_id));
+      data.items = data.items.map((item: any) => ({
+        ...item,
+        visited: visitedIds.has(item.location_id),
+      }));
+    }
+
     return data;
   },
 
