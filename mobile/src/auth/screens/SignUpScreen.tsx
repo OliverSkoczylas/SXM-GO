@@ -73,13 +73,6 @@ export default function SignUpScreen() {
     }
   };
 
-  const handleFacebookLogin = async () => {
-    const { error } = await auth.signInWithFacebook();
-    if (error && error.message !== 'cancelled') {
-      showToast(AUTH_ERRORS.OAUTH_FAILED, 'error');
-    }
-  };
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -97,7 +90,6 @@ export default function SignUpScreen() {
         <SocialLoginButtons
           onGoogle={handleGoogleLogin}
           onApple={handleAppleLogin}
-          onFacebook={handleFacebookLogin}
         />
 
         <View style={styles.signInRow}>
@@ -126,7 +118,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 50,
     paddingBottom: 40,
   },
   title: {

@@ -41,21 +41,20 @@ export default function PrivacySettingsScreen() {
   }, [user?.id]);
 
   const handleLocationToggle = async (enabled: boolean) => {
-    if (enabled) {
-      await privacyService.logConsent(user!.id, 'location_tracking', true);
-    } else {
-      await privacyService.logConsent(user!.id, 'location_tracking', false);
-    }
+    if (!user) return;
+    await privacyService.logConsent(user.id, 'location_tracking', enabled);
     await setLocationTracking(enabled);
   };
 
   const handleMarketingToggle = async (enabled: boolean) => {
-    await privacyService.logConsent(user!.id, 'marketing_emails', enabled);
+    if (!user) return;
+    await privacyService.logConsent(user.id, 'marketing_emails', enabled);
     setConsentState((prev) => ({ ...prev, marketing_emails: enabled }));
   };
 
   const handleAnalyticsToggle = async (enabled: boolean) => {
-    await privacyService.logConsent(user!.id, 'analytics', enabled);
+    if (!user) return;
+    await privacyService.logConsent(user.id, 'analytics', enabled);
     setConsentState((prev) => ({ ...prev, analytics: enabled }));
   };
 

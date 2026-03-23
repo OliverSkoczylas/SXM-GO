@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeOAuthProviders();
 
     const init = async () => {
+      console.log('[AuthProvider] Initializing session restoration...');
       try {
         const [sessionResult, onboardingVal] = await Promise.all([
           authService.restoreSession(),
@@ -38,10 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const onboardingSeen = onboardingVal === '1';
 
         if (user && session) {
+          console.log('[AuthProvider] Session found, fetching profile/preferences for:', user.id);
           const [{ data: profile }, { data: preferences }] = await Promise.all([
             profileService.getProfile(user.id),
             preferencesService.getPreferences(user.id),
           ]);
+          console.log('[AuthProvider] Profile/Preferences fetched successfully.');
           setState({
             isLoading: false,
             isAuthenticated: true,
@@ -52,9 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             onboardingSeen,
           });
         } else {
+          console.log('[AuthProvider] No session found.');
           setState((prev) => ({ ...prev, isLoading: false, onboardingSeen }));
         }
-      } catch {
+      } catch (err) {
+        console.warn('[AuthProvider] Restore session failed:', err);
         setState((prev) => ({ ...prev, isLoading: false }));
       }
     };
@@ -67,21 +72,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const [{ data: profile }, { data: preferences }] = await Promise.all([
-          profileService.getProfile(session.user.id),
-          preferencesService.getPreferences(session.user.id),
-        ]);
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          isAuthenticated: true,
-          user: session.user,
-          session,
-          profile,
-          preferences,
-        }));
-      } else if (event === 'SIGNED_OUT') {
+      console.log('[AuthProvider] Auth event received:', event, session?.user?.id ? 'with user' : 'no user');
+            if (event === 'SIGNED_IN' && session?.user) {
+              console.log('[AuthProvider] SIGNED_IN event: fetching profile/prefs...');
+              
+              // Helper to fetch with a short timeout
+              const fetchWithTimeout = async (promise: Promise<any>, label: string) => {
+                try {
+                  return await Promise.race([
+                    promise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), 5000))
+                  ]);
+                } catch (e) {
+                  console.warn(`[AuthProvider] ${label} failed or timed out:`, e);
+                  return { data: null, error: e };
+                }
+              };
+      
+              const [profileRes, prefsRes] = await Promise.all([
+                fetchWithTimeout(profileService.getProfile(session.user.id), 'Profile'),
+                fetchWithTimeout(preferencesService.getPreferences(session.user.id), 'Preferences'),
+              ]);
+      
+              console.log('[AuthProvider] SIGNED_IN event: proceeding with available data.');
+              setState((prev) => ({
+                ...prev,
+                isLoading: false,
+                isAuthenticated: true,
+                user: session.user,
+                session,
+                profile: profileRes.data,
+                preferences: prefsRes.data,
+              }));
+            }
+       else if (event === 'SIGNED_OUT') {
         setState((prev) => ({
           ...prev,
           isLoading: false,

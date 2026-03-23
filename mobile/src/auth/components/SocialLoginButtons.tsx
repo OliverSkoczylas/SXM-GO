@@ -3,18 +3,17 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { GoogleIcon, AppleIcon } from './SocialIcons';
 
 interface SocialLoginButtonsProps {
   onGoogle: () => void;
   onApple: () => void;
-  onFacebook: () => void;
   disabled?: boolean;
 }
 
 export default function SocialLoginButtons({
   onGoogle,
   onApple,
-  onFacebook,
   disabled = false,
 }: SocialLoginButtonsProps) {
   return (
@@ -30,6 +29,9 @@ export default function SocialLoginButtons({
         onPress={onGoogle}
         disabled={disabled}
       >
+        <View style={styles.iconContainer}>
+          <GoogleIcon size={20} />
+        </View>
         <Text style={[styles.socialButtonText, styles.googleText]}>Continue with Google</Text>
       </TouchableOpacity>
 
@@ -39,17 +41,13 @@ export default function SocialLoginButtons({
           onPress={onApple}
           disabled={disabled}
         >
+          <View style={styles.iconContainer}>
+            <AppleIcon size={20} />
+          </View>
           <Text style={[styles.socialButtonText, styles.appleText]}>Continue with Apple</Text>
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity
-        style={[styles.socialButton, styles.facebookButton, disabled && styles.buttonDisabled]}
-        onPress={onFacebook}
-        disabled={disabled}
-      >
-        <Text style={[styles.socialButtonText, styles.facebookText]}>Continue with Facebook</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -75,11 +73,16 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   socialButton: {
+    flexDirection: 'row',
     paddingVertical: 13,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 1,
+  },
+  iconContainer: {
+    marginRight: 12,
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -96,13 +99,6 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
   },
   appleText: {
-    color: '#FFFFFF',
-  },
-  facebookButton: {
-    backgroundColor: '#1877F2',
-    borderColor: '#1877F2',
-  },
-  facebookText: {
     color: '#FFFFFF',
   },
   socialButtonText: {

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SXM GO - Onboarding Icons</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0D1B2A;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+    gap: 16px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    color: #fff;
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    opacity: 0.4;
+    margin-bottom: 8px;
+  }
+
+  .icons-row {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .icon-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .icon-label {
+    font-family: 'Syne', sans-serif;
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    max-width: 120px;
+    line-height: 1.6;
+  }
+
+  svg.icon {
+    width: 160px;
+    height: 160px;
+    filter: drop-shadow(0 12px 32px rgba(0,0,0,0.5));
+    transition: transform 0.3s ease;
+    cursor: pointer;
+  }
+  svg.icon:hover {
+    transform: scale(1.06) translateY(-4px);
+    filter: drop-shadow(0 20px 48px rgba(0,0,0,0.6));
+  }
+
+  .download-hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.25);
+    margin-top: 24px;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<h1>SXM GO · Onboarding Icons</h1>
+
+<div class="icons-row">
+
+  <!-- ICON 1: Welcome to SXM GO -->
+  <div class="icon-wrap">
+    <svg class="icon" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bg1" cx="50%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#00C9B1"/>
+          <stop offset="100%" stop-color="#005F8A"/>
+        </radialGradient>
+        <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#00FFD9" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#00FFD9" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="circle1">
+          <circle cx="80" cy="80" r="76"/>
+        </clipPath>
+      </defs>
+
+      <!-- Base circle -->
+      <circle cx="80" cy="80" r="76" fill="url(#bg1)"/>
+      <circle cx="80" cy="80" r="76" fill="url(#glow1)"/>
+
+      <!-- Ocean waves at bottom -->
+      <ellipse cx="80" cy="140" rx="76" ry="38" fill="#003D5C" opacity="0.6" clip-path="url(#circle1)"/>
+      <path d="M4 118 Q20 108 36 118 Q52 128 68 118 Q84 108 100 118 Q116 128 132 118 Q148 108 156 114 L156 160 L4 160 Z" fill="#004F73" opacity="0.7" clip-path="url(#circle1)"/>
+      <path d="M4 126 Q22 116 40 126 Q58 136 76 126 Q94 116 112 126 Q130 136 156 122 L156 160 L4 160 Z" fill="#006088" opacity="0.5" clip-path="url(#circle1)"/>
+
+      <!-- Island / land bump -->
+      <ellipse cx="80" cy="128" rx="28" ry="8" fill="#2DB87A" clip-path="url(#circle1)"/>
+
+      <!-- Palm tree trunk -->
+      <path d="M80 128 Q77 115 74 105 Q72 98 76 94" stroke="#1A7A4A" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+      <!-- Palm leaves -->
+      <path d="M76 94 Q60 85 54 74" stroke="#3DCE8A" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M76 94 Q68 80 68 68" stroke="#3DCE8A" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M76 94 Q78 78 84 70" stroke="#3DCE8A" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M76 94 Q88 84 96 78" stroke="#3DCE8A" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+      <!-- Coconuts -->
+      <circle cx="74" cy="95" r="3" fill="#8B5E3C"/>
+      <circle cx="78" cy="93" r="3" fill="#8B5E3C"/>
+
+      <!-- Sun -->
+      <circle cx="112" cy="50" r="14" fill="#FFD84D" opacity="0.95"/>
+      <circle cx="112" cy="50" r="18" fill="#FFD84D" opacity="0.15"/>
+      <!-- Sun rays -->
+      <g stroke="#FFD84D" stroke-width="1.5" stroke-linecap="round" opacity="0.7">
+        <line x1="112" y1="28" x2="112" y2="23"/>
+        <line x1="112" y1="72" x2="112" y2="77"/>
+        <line x1="90" y1="50" x2="85" y2="50"/>
+        <line x1="134" y1="50" x2="139" y2="50"/>
+        <line x1="96" y1="34" x2="93" y2="31"/>
+        <line x1="128" y1="34" x2="131" y2="31"/>
+        <line x1="96" y1="66" x2="93" y2="69"/>
+        <line x1="128" y1="66" x2="131" y2="69"/>
+      </g>
+
+      <!-- "GO" text pill -->
+      <rect x="30" y="50" width="36" height="18" rx="9" fill="#FF6B35" opacity="0.95"/>
+      <text x="48" y="63" font-family="'Syne', sans-serif" font-weight="800" font-size="10" fill="white" text-anchor="middle" letter-spacing="1">GO</text>
+
+      <!-- Border ring -->
+      <circle cx="80" cy="80" r="74" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+      <circle cx="80" cy="80" r="76" stroke="rgba(0,201,177,0.3)" stroke-width="1.5" fill="none"/>
+    </svg>
+    <div class="icon-label">Welcome to SXM GO</div>
+  </div>
+
+  <!-- ICON 2: Earn Points & Badges -->
+  <div class="icon-wrap">
+    <svg class="icon" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bg2" cx="40%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#FF8C42"/>
+          <stop offset="100%" stop-color="#C0213E"/>
+        </radialGradient>
+        <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#FFE566" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#FFE566" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="circle2">
+          <circle cx="80" cy="80" r="76"/>
+        </clipPath>
+      </defs>
+
+      <circle cx="80" cy="80" r="76" fill="url(#bg2)"/>
+      <circle cx="80" cy="80" r="76" fill="url(#starGlow)"/>
+
+      <!-- Decorative dots pattern -->
+      <g opacity="0.12" fill="white">
+        <circle cx="20" cy="20" r="2"/><circle cx="40" cy="15" r="1.5"/>
+        <circle cx="130" cy="25" r="2"/><circle cx="145" cy="45" r="1.5"/>
+        <circle cx="15" cy="100" r="1.5"/><circle cx="148" cy="110" r="2"/>
+        <circle cx="25" cy="140" r="1.5"/><circle cx="140" cy="145" r="1.5"/>
+      </g>
+
+      <!-- Badge shape (hexagon-ish) -->
+      <path d="M80 22 L102 34 L102 58 L116 66 L116 94 L102 102 L102 126 L80 138 L58 126 L58 102 L44 94 L44 66 L58 58 L58 34 Z" fill="rgba(255,255,255,0.08)" clip-path="url(#circle2)"/>
+
+      <!-- Medal ribbon -->
+      <path d="M70 42 L80 30 L90 42 L90 60 L80 56 L70 60 Z" fill="#FF4D6A"/>
+      <path d="M70 42 L64 36 L80 30 L96 36 L90 42 Z" fill="#D63050"/>
+
+      <!-- Medal circle -->
+      <circle cx="80" cy="82" r="32" fill="#FFD84D" opacity="0.95"/>
+      <circle cx="80" cy="82" r="28" fill="#FFC820"/>
+      <circle cx="80" cy="82" r="24" fill="#FFD84D"/>
+
+      <!-- Star in medal -->
+      <path d="M80 62 L83.5 73 L95 73 L85.8 79.5 L89.2 90.5 L80 84 L70.8 90.5 L74.2 79.5 L65 73 L76.5 73 Z" fill="#B87800"/>
+      <path d="M80 64 L83 74 L93 74 L85 79.5 L88 89 L80 83.5 L72 89 L75 79.5 L67 74 L77 74 Z" fill="#FFF0A0"/>
+
+      <!-- Points sparkles -->
+      <g fill="#FFE566" opacity="0.9">
+        <!-- Small star top-left -->
+        <path d="M32 55 L33.5 60 L38 60 L34.5 62.5 L36 67.5 L32 65 L28 67.5 L29.5 62.5 L26 60 L30.5 60 Z" transform="scale(0.8) translate(8, 10)"/>
+        <!-- Small star top-right -->
+        <path d="M120 38 L121.5 43 L126 43 L122.5 45.5 L124 50.5 L120 48 L116 50.5 L117.5 45.5 L114 43 L118.5 43 Z" transform="scale(0.7) translate(50, 12)"/>
+        <!-- Tiny sparkle dots -->
+        <circle cx="38" cy="100" r="2.5"/>
+        <circle cx="124" cy="96" r="2"/>
+        <circle cx="42" cy="62" r="1.5"/>
+        <circle cx="120" cy="55" r="1.5"/>
+      </g>
+
+      <!-- "+50 PTS" label -->
+      <rect x="55" y="120" width="50" height="16" rx="8" fill="rgba(0,0,0,0.3)"/>
+      <text x="80" y="131.5" font-family="'Syne', sans-serif" font-weight="800" font-size="8.5" fill="#FFE566" text-anchor="middle" letter-spacing="0.5">+50 PTS</text>
+
+      <circle cx="80" cy="80" r="74" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+      <circle cx="80" cy="80" r="76" stroke="rgba(255,140,66,0.4)" stroke-width="1.5" fill="none"/>
+    </svg>
+    <div class="icon-label">Earn Points & Badges</div>
+  </div>
+
+  <!-- ICON 3: Enable Location -->
+  <div class="icon-wrap">
+    <svg class="icon" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bg3" cx="50%" cy="40%" r="65%">
+          <stop offset="0%" stop-color="#6C63FF"/>
+          <stop offset="100%" stop-color="#2A1F6B"/>
+        </radialGradient>
+        <radialGradient id="pinglow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#A89BFF" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#A89BFF" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="circle3">
+          <circle cx="80" cy="80" r="76"/>
+        </clipPath>
+      </defs>
+
+      <circle cx="80" cy="80" r="76" fill="url(#bg3)"/>
+
+      <!-- Grid lines (map-like) -->
+      <g stroke="rgba(255,255,255,0.07)" stroke-width="1" clip-path="url(#circle3)">
+        <line x1="4" y1="50" x2="156" y2="50"/>
+        <line x1="4" y1="80" x2="156" y2="80"/>
+        <line x1="4" y1="110" x2="156" y2="110"/>
+        <line x1="50" y1="4" x2="50" y2="156"/>
+        <line x1="80" y1="4" x2="80" y2="156"/>
+        <line x1="110" y1="4" x2="110" y2="156"/>
+      </g>
+
+      <!-- Map terrain blobs -->
+      <path d="M30 85 Q45 70 65 78 Q80 84 90 72 Q105 58 118 65 Q130 72 128 88 Q126 100 110 108 Q90 118 72 112 Q50 106 35 98 Z" fill="rgba(72,200,120,0.2)" clip-path="url(#circle3)"/>
+
+      <!-- Pulse rings -->
+      <circle cx="80" cy="78" r="44" stroke="#A89BFF" stroke-width="1.5" fill="none" opacity="0.25"/>
+      <circle cx="80" cy="78" r="32" stroke="#A89BFF" stroke-width="1.5" fill="none" opacity="0.4"/>
+      <circle cx="80" cy="78" r="20" stroke="#A89BFF" stroke-width="2" fill="none" opacity="0.6"/>
+
+      <!-- Center glow -->
+      <circle cx="80" cy="78" r="20" fill="url(#pinglow)"/>
+
+      <!-- Location pin -->
+      <path d="M80 48 C68 48 58 58 58 70 C58 84 80 106 80 106 C80 106 102 84 102 70 C102 58 92 48 80 48 Z" fill="#48C878"/>
+      <path d="M80 50 C69 50 60 59 60 70 C60 83.5 80 103 80 103 C80 103 100 83.5 100 70 C100 59 91 50 80 50 Z" fill="#5EE48E"/>
+      <!-- Inner circle of pin -->
+      <circle cx="80" cy="70" r="10" fill="white" opacity="0.95"/>
+      <circle cx="80" cy="70" r="5" fill="#2A8B50"/>
+
+      <!-- Crosshair lines -->
+      <g stroke="rgba(168,155,255,0.5)" stroke-width="1" stroke-dasharray="3 4">
+        <line x1="80" y1="4" x2="80" y2="44"/>
+        <line x1="80" y1="106" x2="80" y2="156"/>
+        <line x1="4" y1="78" x2="54" y2="78"/>
+        <line x1="106" y1="78" x2="156" y2="78"/>
+      </g>
+
+      <!-- GPS label -->
+      <rect x="52" y="118" width="56" height="16" rx="8" fill="rgba(72,200,120,0.25)" stroke="rgba(72,200,120,0.5)" stroke-width="1"/>
+      <text x="80" y="129.5" font-family="'Syne', sans-serif" font-weight="800" font-size="8" fill="#48C878" text-anchor="middle" letter-spacing="1">GPS ACTIVE</text>
+
+      <circle cx="80" cy="80" r="74" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+      <circle cx="80" cy="80" r="76" stroke="rgba(108,99,255,0.4)" stroke-width="1.5" fill="none"/>
+    </svg>
+    <div class="icon-label">Enable Location</div>
+  </div>
+
+</div>
+
+<p class="download-hint">Right-click any icon → Save as SVG · or use as HTML embeds</p>
+
+</body>
+</html>

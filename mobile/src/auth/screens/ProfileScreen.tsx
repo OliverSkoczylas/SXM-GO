@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/AppNavigator';
 import { useProfile } from '../hooks/useProfile';
+import { useAuth } from '../hooks/useAuth';
 import { displayNameSchema, bioSchema } from '../utils/validation';
 import { AUTH_MESSAGES } from '../constants/authConstants';
 import AvatarPicker from '../components/AvatarPicker';
@@ -25,6 +26,7 @@ type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
+  const auth = useAuth();
   const { profile, isUpdating, updateProfile, uploadAvatar, removeAvatar } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(profile?.display_name ?? '');
@@ -55,7 +57,14 @@ export default function ProfileScreen() {
   if (!profile) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0066CC" />
+        <Text style={styles.errorTitle}>Profile Not Found</Text>
+        <Text style={styles.errorSub}>We couldn't load your profile data. This can happen if the initial setup is incomplete.</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => auth.signOut()}
+        >
+          <Text style={styles.retryButtonText}>Sign Out & Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -164,6 +173,12 @@ export default function ProfileScreen() {
       <View style={styles.menuSection}>
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => navigation.navigate('ItineraryList')}
+        >
+          <Text style={styles.menuItemText}>My Itineraries</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('Settings')}
         >
           <Text style={styles.menuItemText}>Settings</Text>
@@ -194,8 +209,12 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { paddingHorizontal: 24, paddingBottom: 40 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 8 },
+  errorSub: { fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  retryButton: { backgroundColor: '#0066CC', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  retryButtonText: { color: '#FFFFFF', fontWeight: '600' },
   viewSection: { alignItems: 'center', marginBottom: 24 },
   displayName: { fontSize: 24, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
   email: { fontSize: 14, color: '#6B7280', marginBottom: 8 },

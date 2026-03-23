@@ -105,3 +105,13 @@ export interface AuthResult {
   session: Session | null;
   error: AuthError | null;
 }
+
+// ── Leaderboard ──
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  points: number;
+}

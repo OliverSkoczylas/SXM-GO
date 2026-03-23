@@ -1,0 +1,34 @@
+{
+  "project_info": {
+    "project_number": "810021813193",
+    "project_id": "sxmgo-491115",
+    "storage_bucket": "sxmgo-491115.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:810021813193:android:com.sxmgo",
+        "android_client_info": {
+          "package_name": "com.sxmgo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "810021813193-jorc9mj7pv1thlq4ivl767pu3tdfc031.apps.googleusercontent.com",
+          "client_type": 1
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": ""
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

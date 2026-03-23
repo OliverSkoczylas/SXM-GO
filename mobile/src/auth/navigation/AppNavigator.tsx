@@ -10,6 +10,14 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
+import MapScreen from '../screens/MapScreen';
+import {
+  MapTabIcon,
+  LeaderboardTabIcon,
+  ChallengesTabIcon,
+  ProfileTabIcon,
+} from '../components/TabIcons';
 
 // ── Placeholder screens for other devs ──
 
@@ -22,8 +30,6 @@ function PlaceholderScreen({ title }: { title: string }) {
   );
 }
 
-const MapPlaceholder = () => <PlaceholderScreen title="Map" />;          // Dev 2
-const LeaderboardPlaceholder = () => <PlaceholderScreen title="Leaderboard" />; // Dev 4
 const ChallengesPlaceholder = () => <PlaceholderScreen title="Challenges" />;   // Dev 3
 
 const placeholderStyles = StyleSheet.create({
@@ -46,12 +52,19 @@ export type ProfileStackParamList = {
   Settings: undefined;
   PrivacySettings: undefined;
   ChangePassword: undefined;
+  ItineraryList: undefined;
+  ItineraryDetail: { id: string };
+  CreateItinerary: undefined;
 };
 
 // ── Navigators ──
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+
+import ItineraryListScreen from '../screens/ItineraryListScreen';
+import ItineraryDetailScreen from '../screens/ItineraryDetailScreen';
+import CreateItineraryScreen from '../screens/CreateItineraryScreen';
 
 function ProfileStackNavigator() {
   return (
@@ -76,6 +89,21 @@ function ProfileStackNavigator() {
         component={ChangePasswordScreen}
         options={{ headerTitle: 'Change Password' }}
       />
+      <ProfileStack.Screen
+        name="ItineraryList"
+        component={ItineraryListScreen}
+        options={{ headerTitle: 'Itineraries' }}
+      />
+      <ProfileStack.Screen
+        name="ItineraryDetail"
+        component={ItineraryDetailScreen}
+        options={{ headerTitle: 'Itinerary Details' }}
+      />
+      <ProfileStack.Screen
+        name="CreateItinerary"
+        component={CreateItineraryScreen}
+        options={{ headerTitle: 'New Itinerary' }}
+      />
     </ProfileStack.Navigator>
   );
 }
@@ -83,23 +111,33 @@ function ProfileStackNavigator() {
 export function AppNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#0066CC',
         tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
           borderTopColor: '#F3F4F6',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
-      }}
+        tabBarIcon: ({ color, size }) => {
+          if (route.name === 'MapTab') return <MapTabIcon color={color} size={size} />;
+          if (route.name === 'LeaderboardTab') return <LeaderboardTabIcon color={color} size={size} />;
+          if (route.name === 'ChallengesTab') return <ChallengesTabIcon color={color} size={size} />;
+          if (route.name === 'ProfileTab') return <ProfileTabIcon color={color} size={size} />;
+          return null;
+        },
+      })}
     >
       <Tab.Screen
         name="MapTab"
-        component={MapPlaceholder}
+        component={MapScreen}
         options={{ tabBarLabel: 'Map' }}
       />
       <Tab.Screen
         name="LeaderboardTab"
-        component={LeaderboardPlaceholder}
+        component={LeaderboardScreen}
         options={{ tabBarLabel: 'Leaderboard' }}
       />
       <Tab.Screen
