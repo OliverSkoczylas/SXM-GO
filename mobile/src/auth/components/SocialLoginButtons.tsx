@@ -3,19 +3,17 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { GoogleIcon, AppleIcon, FacebookIcon } from './SocialIcons';
+import { GoogleIcon, AppleIcon } from './SocialIcons';
 
 interface SocialLoginButtonsProps {
   onGoogle: () => void;
   onApple: () => void;
-  onFacebook: () => void;
   disabled?: boolean;
 }
 
 export default function SocialLoginButtons({
   onGoogle,
   onApple,
-  onFacebook,
   disabled = false,
 }: SocialLoginButtonsProps) {
   return (
@@ -50,16 +48,6 @@ export default function SocialLoginButtons({
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity
-        style={[styles.socialButton, styles.facebookButton, disabled && styles.buttonDisabled]}
-        onPress={onFacebook}
-        disabled={disabled}
-      >
-        <View style={styles.iconContainer}>
-          <FacebookIcon size={20} />
-        </View>
-        <Text style={[styles.socialButtonText, styles.facebookText]}>Continue with Facebook</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -111,13 +99,6 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
   },
   appleText: {
-    color: '#FFFFFF',
-  },
-  facebookButton: {
-    backgroundColor: '#1877F2',
-    borderColor: '#1877F2',
-  },
-  facebookText: {
     color: '#FFFFFF',
   },
   socialButtonText: {

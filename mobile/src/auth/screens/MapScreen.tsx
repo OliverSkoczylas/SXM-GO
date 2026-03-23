@@ -287,7 +287,8 @@ export default function MapScreen() {
 
       <AddToItineraryModal
         visible={!!selectedLocationForItinerary}
-        onClose={() => {
+        onClose={() => setSelectedLocationForItinerary(null)}
+        onAdd={() => {
           setSelectedLocationForItinerary(null);
           setToast({ visible: true, message: 'Added to itinerary!', type: 'success' });
         }}

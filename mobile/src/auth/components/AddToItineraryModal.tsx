@@ -13,10 +13,11 @@ import { useItineraries } from '../hooks/useItineraries';
 interface AddToItineraryModalProps {
   visible: boolean;
   onClose: () => void;
+  onAdd?: () => void;
   locationId: string;
 }
 
-const AddToItineraryModal = ({ visible, onClose, locationId }: AddToItineraryModalProps) => {
+const AddToItineraryModal = ({ visible, onClose, onAdd, locationId }: AddToItineraryModalProps) => {
   const { itineraries, loading, fetchMyItineraries, addItem } = useItineraries();
 
   useEffect(() => {
@@ -27,9 +28,8 @@ const AddToItineraryModal = ({ visible, onClose, locationId }: AddToItineraryMod
 
   const handleSelect = async (itineraryId: string) => {
     try {
-      // For simplicity, adding to the end (index 999 or similar, logic could be smarter)
-      await addItem(itineraryId, locationId, 0); 
-      onClose();
+      await addItem(itineraryId, locationId, 0);
+      onAdd ? onAdd() : onClose();
     } catch (e) {
       // Error handled in hook
     }

@@ -54,10 +54,15 @@ export default function ChangePasswordScreen() {
       return;
     }
 
+    if (!user?.email) {
+      setToast({ visible: true, message: 'User not found. Please log in again.', type: 'error' });
+      return;
+    }
+
     setIsSubmitting(true);
 
     // Re-authenticate before changing password to verify identity
-    const { error: authError } = await signInWithEmail(user!.email!, currentPassword);
+    const { error: authError } = await signInWithEmail(user.email, currentPassword);
     if (authError) {
       setIsSubmitting(false);
       setErrors({ currentPassword: 'Current password is incorrect.' });

@@ -114,10 +114,15 @@ export default function LeaderboardScreen() {
         <View style={styles.rankContainer}>
           <Text style={[styles.rankText, item.rank <= 3 && styles.topRankText]}>{item.rank}</Text>
         </View>
-        <Image
-          source={item.avatar_url ? { uri: item.avatar_url } : require('../../../android/app/src/main/res/mipmap-xhdpi/ic_launcher.png')}
-          style={styles.avatar}
-        />
+        {item.avatar_url ? (
+          <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Text style={styles.avatarInitial}>
+              {(item.display_name || 'A')[0].toUpperCase()}
+            </Text>
+          </View>
+        )}
         <View style={styles.userInfo}>
           <Text style={[styles.userName, isCurrentUser && styles.currentUserName]} numberOfLines={1}>
             {item.display_name || 'Anonymous Traveler'}
@@ -246,6 +251,8 @@ const styles = StyleSheet.create({
   rankText: { fontSize: 16, fontWeight: '600', color: '#6B7280' },
   topRankText: { color: '#F59E0B', fontSize: 18, fontWeight: '700' },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E5E7EB' },
+  avatarPlaceholder: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#BFDBFE' },
+  avatarInitial: { fontSize: 18, fontWeight: '700', color: '#1D4ED8' },
   userInfo: { flex: 1, marginLeft: 12 },
   userName: { fontSize: 16, fontWeight: '600', color: '#1A1A1A' },
   currentUserName: { color: '#0066CC' },
