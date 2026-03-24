@@ -12,6 +12,7 @@ import * as profileService from '../services/profileService';
 import * as preferencesService from '../services/preferencesService';
 import { getSupabaseClient } from '../services/supabaseClient';
 import { initializeOAuthProviders } from '../services/oauthConfig';
+import { log } from '../../shared/services/logger';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
@@ -29,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeOAuthProviders();
 
     const init = async () => {
-      console.log('[AuthProvider] Initializing session restoration...');
+      log.debug('[AuthProvider] Initializing session restoration...');
       try {
         const [sessionResult, onboardingVal] = await Promise.all([
           authService.restoreSession(),
@@ -39,12 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const onboardingSeen = onboardingVal === '1';
 
         if (user && session) {
-          console.log('[AuthProvider] Session found, fetching profile/preferences for:', user.id);
+          log.debug('[AuthProvider] Session found, fetching profile/preferences for:', user.id);
           const [{ data: profile }, { data: preferences }] = await Promise.all([
             profileService.getProfile(user.id),
             preferencesService.getPreferences(user.id),
           ]);
-          console.log('[AuthProvider] Profile/Preferences fetched successfully.');
+          log.info('[AuthProvider] Profile/Preferences fetched successfully.');
           setState({
             isLoading: false,
             isAuthenticated: true,
@@ -55,11 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             onboardingSeen,
           });
         } else {
-          console.log('[AuthProvider] No session found.');
+          log.info('[AuthProvider] No session found.');
           setState((prev) => ({ ...prev, isLoading: false, onboardingSeen }));
         }
       } catch (err) {
-        console.warn('[AuthProvider] Restore session failed:', err);
+        log.warn('[AuthProvider] Restore session failed:', err);
         setState((prev) => ({ ...prev, isLoading: false }));
       }
     };
@@ -72,9 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[AuthProvider] Auth event received:', event, session?.user?.id ? 'with user' : 'no user');
+      log.debug('[AuthProvider] Auth event received:', event, session?.user?.id ? 'with user' : 'no user');
             if (event === 'SIGNED_IN' && session?.user) {
-              console.log('[AuthProvider] SIGNED_IN event: fetching profile/prefs...');
+              log.debug('[AuthProvider] SIGNED_IN event: fetching profile/prefs...');
               
               // Helper to fetch with a short timeout
               const fetchWithTimeout = async (promise: Promise<any>, label: string) => {
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), 5000))
                   ]);
                 } catch (e) {
-                  console.warn(`[AuthProvider] ${label} failed or timed out:`, e);
+                  log.warn(`[AuthProvider] ${label} failed or timed out:`, e);
                   return { data: null, error: e };
                 }
               };
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 fetchWithTimeout(preferencesService.getPreferences(session.user.id), 'Preferences'),
               ]);
       
-              console.log('[AuthProvider] SIGNED_IN event: proceeding with available data.');
+              log.info('[AuthProvider] SIGNED_IN event: proceeding with available data.');
               setState((prev) => ({
                 ...prev,
                 isLoading: false,
