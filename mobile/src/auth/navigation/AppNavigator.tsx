@@ -12,50 +12,13 @@ import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import MapScreen from '../screens/MapScreen';
+import ChallengesScreen from '../screens/ChallengesScreen';
 import {
   MapTabIcon,
   LeaderboardTabIcon,
   ChallengesTabIcon,
   ProfileTabIcon,
 } from '../components/TabIcons';
-
-// ── Placeholder screens for other devs ──
-
-function PlaceholderScreen({ title }: { title: string }) {
-  return (
-    <View style={placeholderStyles.container}>
-      <Text style={placeholderStyles.text}>{title}</Text>
-      <Text style={placeholderStyles.subtext}>Coming soon</Text>
-    </View>
-  );
-}
-
-const ChallengesPlaceholder = () => <PlaceholderScreen title="Challenges" />;   // Dev 3
-
-const placeholderStyles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
-  text: { fontSize: 20, fontWeight: '600', color: '#1A1A1A' },
-  subtext: { fontSize: 14, color: '#6B7280', marginTop: 4 },
-});
-
-// ── Type definitions ──
-
-export type AppTabParamList = {
-  MapTab: undefined;
-  LeaderboardTab: undefined;
-  ChallengesTab: undefined;
-  ProfileTab: undefined;
-};
-
-export type ProfileStackParamList = {
-  Profile: undefined;
-  Settings: undefined;
-  PrivacySettings: undefined;
-  ChangePassword: undefined;
-  ItineraryList: undefined;
-  ItineraryDetail: { id: string };
-  CreateItinerary: undefined;
-};
 
 // ── Navigators ──
 
@@ -142,7 +105,7 @@ export function AppNavigator() {
       />
       <Tab.Screen
         name="ChallengesTab"
-        component={ChallengesPlaceholder}
+        component={ChallengesScreen}
         options={{ tabBarLabel: 'Challenges' }}
       />
       <Tab.Screen
@@ -153,3 +116,4 @@ export function AppNavigator() {
     </Tab.Navigator>
   );
 }
+

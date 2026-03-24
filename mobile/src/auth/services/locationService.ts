@@ -49,13 +49,53 @@ export async function getLocations(): Promise<{ data: Location[] | null; error: 
   return { data: locations, error: null };
 }
 
-export async function checkIn(locationId: string, points: number): Promise<{ error: any }> {
+/**
+ * Calculates the distance between two coordinates in meters using the Haversine formula.
+ */
+export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+export async function checkIn(
+  locationId: string, 
+  points: number, 
+  userCoords?: { latitude: number; longitude: number },
+  targetCoords?: { latitude: number; longitude: number }
+): Promise<{ error: any }> {
+  // FR-027, FR-028: Proximity verification (100 meters)
+  if (userCoords && targetCoords) {
+    const distance = getDistance(
+      userCoords.latitude,
+      userCoords.longitude,
+      targetCoords.latitude,
+      targetCoords.longitude
+    );
+    
+    if (distance > 100) {
+      return { 
+        error: { 
+          message: `Too far! You are ${Math.round(distance)}m away. Move closer (within 100m) to check in.` 
+        } 
+      };
+    }
+  }
+
   const supabase = getSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { error: { message: 'User not authenticated' } };
 
-  // FR-027, FR-028: Submit check-in
   const { error } = await supabase
     .from('check_ins')
     .insert({

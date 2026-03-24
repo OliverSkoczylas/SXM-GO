@@ -15,10 +15,12 @@ import {
   Alert,
   RefreshControl,
   Platform,
+  Linking,
 } from 'react-native';
-// Note: You must run 'npm install react-native-webview' and rebuild the app
+// Note: You must run 'npm install react-native-webview @react-native-community/geolocation' and rebuild the app
 import { WebView } from 'react-native-webview';
-import { getLocations, checkIn, Location } from '../services/locationService';
+import Geolocation from '@react-native-community/geolocation';
+import { getLocations, checkIn, Location, getDistance } from '../services/locationService';
 import { useAuth } from '../hooks/useAuth';
 import Toast from '../../shared/components/Toast';
 import AddToItineraryModal from '../components/AddToItineraryModal';
@@ -32,9 +34,48 @@ export default function MapScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as const });
   const [selectedLocationForItinerary, setSelectedLocationForItinerary] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const webViewRef = useRef<WebView>(null);
+  const watchId = useRef<number | null>(null);
 
   const categories = ['Beach', 'Restaurant', 'Casino', 'Attraction', 'Shopping', 'Entertainment'];
+
+  // FR-016: Real-time user location tracking
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ latitude, longitude });
+        updateUserMarker(latitude, longitude);
+      },
+      (error) => console.error('[Map] Geolocation error:', error),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+    );
+
+    watchId.current = Geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ latitude, longitude });
+        updateUserMarker(latitude, longitude);
+      },
+      (error) => console.error('[Map] Geolocation watch error:', error),
+      { enableHighAccuracy: true, distanceFilter: 10 }
+    );
+
+    return () => {
+      if (watchId.current !== null) {
+        Geolocation.clearWatch(watchId.current);
+      }
+    };
+  }, []);
+
+  const updateUserMarker = (lat: number, lng: number) => {
+    const message = {
+      type: 'UPDATE_USER_LOC',
+      payload: { lat, lng }
+    };
+    webViewRef.current?.postMessage(JSON.stringify(message));
+  };
 
   const fetchLocations = useCallback(async (refreshing = false) => {
     if (!refreshing) setIsLoading(true);
@@ -82,17 +123,39 @@ export default function MapScreen() {
     updateMapPins(filtered);
   };
 
+  // FR-023: Directions to selected locations
+  const handleGetDirections = (location: Location) => {
+    const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
+    const latLng = `${location.latitude},${location.longitude}`;
+    const label = location.name;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`
+    });
+
+    if (url) Linking.openURL(url);
+  };
+
   const handleCheckIn = async (location: Location) => {
     if (location.visited) {
       Alert.alert('Already Visited', 'You have already checked in at this location.');
       return;
     }
 
+    // FR-027, FR-028: Check distance before showing "Check In" as valid
+    const distance = userLocation 
+      ? getDistance(userLocation.latitude, userLocation.longitude, location.latitude, location.longitude)
+      : Infinity;
+
     Alert.alert(
-      'Location Options',
-      `${location.name} (${location.points} points)`,
+      location.name,
+      `${location.category} • ${location.points} points\n${distance < 1000 ? `${Math.round(distance)}m away` : `${(distance/1000).toFixed(1)}km away`}`,
       [
         { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Get Directions', 
+          onPress: () => handleGetDirections(location) 
+        },
         { 
           text: 'Add to Itinerary', 
           onPress: () => setSelectedLocationForItinerary(location.id) 
@@ -100,9 +163,14 @@ export default function MapScreen() {
         {
           text: 'Check In',
           onPress: async () => {
-            const { error } = await checkIn(location.id, location.points);
+            const { error } = await checkIn(
+              location.id, 
+              location.points, 
+              userLocation || undefined, 
+              { latitude: location.latitude, longitude: location.longitude }
+            );
             if (error) {
-              Alert.alert('Error', error.message || 'Failed to check in.');
+              Alert.alert('Cannot Check In', error.message || 'Failed to check in.');
             } else {
               setToast({ visible: true, message: `Checked in! +${location.points} points`, type: 'success' });
               fetchLocations(true);
@@ -152,7 +220,12 @@ export default function MapScreen() {
       <style>
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100vw; background: #f0f0f0; }
-        .visited-marker { filter: grayscale(100%) opacity(0.6); }
+        .user-marker {
+          background-color: #0066CC;
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
       </style>
     </head>
     <body>
@@ -166,12 +239,27 @@ export default function MapScreen() {
         }).addTo(map);
 
         let markers = [];
+        let userMarker = null;
 
         window.addEventListener('message', (event) => {
           let data;
           try {
             data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
           } catch (e) { return; }
+
+          if (data.type === 'UPDATE_USER_LOC') {
+            const { lat, lng } = data.payload;
+            if (!userMarker) {
+              const userIcon = L.divIcon({
+                className: 'user-marker',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+              });
+              userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
+            } else {
+              userMarker.setLatLng([lat, lng]);
+            }
+          }
 
           if (data.type === 'SET_PINS') {
             markers.forEach(m => map.removeLayer(m));
