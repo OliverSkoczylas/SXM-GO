@@ -1,4 +1,7 @@
 # SXM-GO
+
+https://sxmgo.vercel.app/
+
 gamified mobile tourism app for St. Maarten that transforms island exploration into an interactive adventure. Compete with fellow travelers, complete challenges, discover local businesses, and climb the leaderboard as you explore 37 beaches and hidden gems across the island.
 ## Features
 - 🗺️ Interactive Google Maps-style island exploration
