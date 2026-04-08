@@ -42,3 +42,6 @@ coverage/
 
 # Supabase
 supabase/.temp/
+
+.claude/
+CLAUDE.md
