@@ -2,7 +2,9 @@
 // This provides a free, interactive map without requiring Google Maps API keys.
 // FR-012 to FR-023: Interactive map and location pins
 // FR-016: Real-time user location dot
-// FR-027 to FR-031: Check-in mechanism with GPS proximity validation
+// FR-023: Directions to selected locations
+// FR-024: Offline map caching
+// FR-027 to FR-035: Check-in mechanism with GPS proximity + anti-fraud
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
@@ -20,6 +22,8 @@ import {
 // Note: You must run 'npm install react-native-webview' and rebuild the app
 import { WebView } from 'react-native-webview';
 import { getLocations, checkIn, Location } from '../services/locationService';
+import { openDirections } from '../services/directionsService';
+import { getPendingCheckIns } from '../services/offlineService';
 import { useAuth } from '../hooks/useAuth';
 import Toast from '../../shared/components/Toast';
 import AddToItineraryModal from '../components/AddToItineraryModal';
@@ -39,21 +43,6 @@ function getUserLocation(): Promise<{ lat: number; lng: number } | null> {
   });
 }
 
-// FR-027/028: Haversine distance in metres between two GPS points
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-const CHECK_IN_RADIUS_METRES = 150;
-
 export default function MapScreen() {
   const { profile, refreshProfile } = useAuth();
   const [locations, setLocations] = useState<Location[]>([]);
@@ -61,7 +50,8 @@ export default function MapScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as const });
+  const [pendingCount, setPendingCount] = useState(0);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
   const [selectedLocationForItinerary, setSelectedLocationForItinerary] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
 
@@ -86,6 +76,11 @@ export default function MapScreen() {
     };
   }, []);
 
+  // Check for pending offline check-ins
+  useEffect(() => {
+    getPendingCheckIns().then(p => setPendingCount(p.length));
+  }, []);
+
   const fetchLocations = useCallback(async (refreshing = false) => {
     if (!refreshing) setIsLoading(true);
     const { data, error } = await getLocations();
@@ -93,14 +88,16 @@ export default function MapScreen() {
       console.error('[Map] Error fetching locations:', error);
     } else {
       setLocations(data || []);
-      const filtered = selectedCategory 
-        ? (data || []).filter(l => l.category === selectedCategory) 
+      const filtered = selectedCategory
+        ? (data || []).filter(l => l.category === selectedCategory)
         : (data || []);
       setFilteredLocations(filtered);
-      
+
       // Update the map pins
       updateMapPins(filtered);
     }
+    // Refresh pending count after sync attempt
+    getPendingCheckIns().then(p => setPendingCount(p.length));
     setIsLoading(false);
     setIsRefreshing(false);
   }, [selectedCategory]);
@@ -133,14 +130,25 @@ export default function MapScreen() {
   };
 
   const doCheckIn = async (location: Location) => {
-    const { error } = await checkIn(location.id, location.points);
-    if (error) {
-      Alert.alert('Error', error.message || 'Failed to check in.');
-    } else {
-      setToast({ visible: true, message: `Checked in! +${location.points} points`, type: 'success' });
-      fetchLocations(true);
-      refreshProfile();
+    const result = await checkIn(location);
+
+    if (result.error) {
+      Alert.alert('Check-In Failed', result.error.message || 'Failed to check in.');
+      return;
     }
+
+    if (result.offline) {
+      setToast({ visible: true, message: `Offline check-in queued! Will sync when online.`, type: 'success' });
+      setPendingCount(prev => prev + 1);
+    } else {
+      const msg = result.flagged
+        ? `Checked in! +${location.points} points (under review)`
+        : `Checked in! +${location.points} points`;
+      setToast({ visible: true, message: msg, type: 'success' });
+    }
+
+    fetchLocations(true);
+    refreshProfile();
   };
 
   const handleCheckIn = async (location: Location) => {
@@ -155,32 +163,16 @@ export default function MapScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         {
+          text: 'Directions',
+          onPress: () => openDirections(location.latitude, location.longitude, location.name),
+        },
+        {
           text: 'Add to Itinerary',
           onPress: () => setSelectedLocationForItinerary(location.id),
         },
         {
           text: 'Check In',
-          onPress: async () => {
-            // FR-027/028: Verify GPS proximity before allowing check-in
-            const userLoc = await getUserLocation();
-            if (userLoc) {
-              const distance = haversineDistance(
-                userLoc.lat,
-                userLoc.lng,
-                location.latitude,
-                location.longitude,
-              );
-              if (distance > CHECK_IN_RADIUS_METRES) {
-                Alert.alert(
-                  'Too Far Away',
-                  `You are ${Math.round(distance)}m from ${location.name}. You must be within ${CHECK_IN_RADIUS_METRES}m to check in.`,
-                  [{ text: 'OK' }],
-                );
-                return;
-              }
-            }
-            await doCheckIn(location);
-          },
+          onPress: () => doCheckIn(location),
         },
       ],
     );
@@ -303,6 +295,11 @@ export default function MapScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Map</Text>
+        {pendingCount > 0 && (
+          <Text style={styles.pendingBanner}>
+            {pendingCount} offline check-in{pendingCount > 1 ? 's' : ''} pending sync
+          </Text>
+        )}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryBar}>
           <TouchableOpacity
             style={[styles.categoryTab, !selectedCategory && styles.activeTab]}
@@ -347,7 +344,7 @@ export default function MapScreen() {
         }
         renderItem={({ item }) => (
           <View style={[styles.locationCard, item.visited && styles.visitedCard]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cardInfo}
               onPress={() => handleFocusLocation(item)}
             >
@@ -355,6 +352,12 @@ export default function MapScreen() {
               <Text style={styles.locationCategory}>{item.category} • {item.points} pts</Text>
             </TouchableOpacity>
             <View style={styles.cardActions}>
+              <TouchableOpacity
+                style={styles.directionsButton}
+                onPress={() => openDirections(item.latitude, item.longitude, item.name)}
+              >
+                <Text style={styles.directionsButtonText}>Go</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => setSelectedLocationForItinerary(item.id)}
@@ -404,7 +407,8 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { backgroundColor: '#FFFFFF', paddingTop: 40, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#F3F4F6' },
-  title: { fontSize: 28, fontWeight: '700', color: '#1A1A1A', marginBottom: 12 },
+  title: { fontSize: 28, fontWeight: '700', color: '#1A1A1A', marginBottom: 8 },
+  pendingBanner: { fontSize: 12, color: '#F59E0B', fontWeight: '600', marginBottom: 8, backgroundColor: '#FFFBEB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4, overflow: 'hidden' },
   categoryBar: { flexDirection: 'row' },
   categoryTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', marginRight: 8 },
   activeTab: { backgroundColor: '#0066CC' },
@@ -419,7 +423,9 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1 },
   locationName: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
   locationCategory: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  cardActions: { flexDirection: 'row', gap: 8 },
+  cardActions: { flexDirection: 'row', gap: 6 },
+  directionsButton: { borderWidth: 1, borderColor: '#10B981', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
+  directionsButtonText: { color: '#10B981', fontWeight: '700', fontSize: 12 },
   addButton: { borderWidth: 1, borderColor: '#0066CC', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
   addButtonText: { color: '#0066CC', fontWeight: '600', fontSize: 12 },
   checkInButton: { backgroundColor: '#0066CC', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },

@@ -2,6 +2,7 @@
 // FR-059 to FR-070: Badge system with Bronze/Silver/Gold tiers
 
 import { getSupabaseClient } from './supabaseClient';
+import { notifyBadgeEarned } from './notificationService';
 
 export type BadgeCategory =
   | 'first_step'
@@ -215,6 +216,18 @@ export async function syncBadges(currentAchievements: string[]): Promise<string[
       .from('profiles')
       .update({ achievements: updated })
       .eq('id', user.id);
+
+    // FR-067: Notify for newly earned badges
+    const newKeys = updated.filter(k => !currentAchievements.includes(k));
+    for (const key of newKeys) {
+      const parsed = parseBadgeKey(key);
+      if (parsed) {
+        const badge = BADGE_DEFINITIONS.find(b => b.id === parsed.badgeId);
+        if (badge) {
+          notifyBadgeEarned(badge.name, parsed.tier).catch(() => {});
+        }
+      }
+    }
   }
 
   return updated;
