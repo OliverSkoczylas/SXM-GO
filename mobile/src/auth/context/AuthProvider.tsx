@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 try {
                   return await Promise.race([
                     promise,
-                    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), 5000))
+                    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), 15000))
                   ]);
                 } catch (e) {
                   log.warn(`[AuthProvider] ${label} failed or timed out:`, e);

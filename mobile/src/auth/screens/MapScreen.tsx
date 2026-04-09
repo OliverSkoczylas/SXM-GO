@@ -1,5 +1,4 @@
 // Map screen using OpenStreetMap via WebView
-// This provides a free, interactive map without requiring Google Maps API keys.
 // FR-012 to FR-023: Interactive map and location pins
 // FR-016: Real-time user location dot
 // FR-023: Directions to selected locations
@@ -19,7 +18,6 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
-// Note: You must run 'npm install react-native-webview' and rebuild the app
 import { WebView } from 'react-native-webview';
 import { getLocations, checkIn, Location } from '../services/locationService';
 import { openDirections } from '../services/directionsService';
@@ -28,7 +26,16 @@ import { useAuth } from '../hooks/useAuth';
 import Toast from '../../shared/components/Toast';
 import AddToItineraryModal from '../components/AddToItineraryModal';
 
-// FR-016: Get user's GPS coordinates
+// Category config — colors and emoji for pins + UI
+const CATEGORY_CONFIG: Record<string, { color: string; emoji: string; bg: string }> = {
+  Beach:         { color: '#0EA5E9', emoji: '\u{1F3D6}',  bg: '#E0F2FE' },
+  Restaurant:    { color: '#F97316', emoji: '\u{1F37D}',  bg: '#FFF7ED' },
+  Casino:        { color: '#EF4444', emoji: '\u{1F3B0}',  bg: '#FEF2F2' },
+  Attraction:    { color: '#8B5CF6', emoji: '\u{1F3DB}',  bg: '#F5F3FF' },
+  Shopping:      { color: '#EC4899', emoji: '\u{1F6CD}',  bg: '#FDF2F8' },
+  Entertainment: { color: '#10B981', emoji: '\u{1F3B6}',  bg: '#ECFDF5' },
+};
+
 function getUserLocation(): Promise<{ lat: number; lng: number } | null> {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
@@ -57,7 +64,6 @@ export default function MapScreen() {
 
   const categories = ['Beach', 'Restaurant', 'Casino', 'Attraction', 'Shopping', 'Entertainment'];
 
-  // FR-016: Periodically send user location to the map WebView
   useEffect(() => {
     let active = true;
     const sendLocation = async () => {
@@ -70,13 +76,9 @@ export default function MapScreen() {
     };
     sendLocation();
     const interval = setInterval(sendLocation, 15000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    return () => { active = false; clearInterval(interval); };
   }, []);
 
-  // Check for pending offline check-ins
   useEffect(() => {
     getPendingCheckIns().then(p => setPendingCount(p.length));
   }, []);
@@ -92,32 +94,22 @@ export default function MapScreen() {
         ? (data || []).filter(l => l.category === selectedCategory)
         : (data || []);
       setFilteredLocations(filtered);
-
-      // Update the map pins
       updateMapPins(filtered);
     }
-    // Refresh pending count after sync attempt
     getPendingCheckIns().then(p => setPendingCount(p.length));
     setIsLoading(false);
     setIsRefreshing(false);
   }, [selectedCategory]);
 
-  useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
+  useEffect(() => { fetchLocations(); }, [fetchLocations]);
 
   const updateMapPins = (locs: Location[]) => {
     const message = {
       type: 'SET_PINS',
       payload: locs.map(l => ({
-        id: l.id,
-        name: l.name,
-        lat: l.latitude,
-        lng: l.longitude,
-        category: l.category,
-        visited: l.visited,
-        points: l.points
-      }))
+        id: l.id, name: l.name, lat: l.latitude, lng: l.longitude,
+        category: l.category, visited: l.visited, points: l.points,
+      })),
     };
     webViewRef.current?.postMessage(JSON.stringify(message));
   };
@@ -131,22 +123,19 @@ export default function MapScreen() {
 
   const doCheckIn = async (location: Location) => {
     const result = await checkIn(location);
-
     if (result.error) {
       Alert.alert('Check-In Failed', result.error.message || 'Failed to check in.');
       return;
     }
-
     if (result.offline) {
-      setToast({ visible: true, message: `Offline check-in queued! Will sync when online.`, type: 'success' });
+      setToast({ visible: true, message: 'Offline check-in queued! Will sync when online.', type: 'success' });
       setPendingCount(prev => prev + 1);
     } else {
       const msg = result.flagged
-        ? `Checked in! +${location.points} points (under review)`
-        : `Checked in! +${location.points} points`;
+        ? `+${location.points} pts at ${location.name} (under review)`
+        : `+${location.points} pts at ${location.name}!`;
       setToast({ visible: true, message: msg, type: 'success' });
     }
-
     fetchLocations(true);
     refreshProfile();
   };
@@ -156,24 +145,14 @@ export default function MapScreen() {
       Alert.alert('Already Visited', 'You have already checked in at this location.');
       return;
     }
-
     Alert.alert(
-      'Location Options',
-      `${location.name} (${location.points} points)`,
+      location.name,
+      `${CATEGORY_CONFIG[location.category]?.emoji || ''} ${location.category}  •  ${location.points} pts`,
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Directions',
-          onPress: () => openDirections(location.latitude, location.longitude, location.name),
-        },
-        {
-          text: 'Add to Itinerary',
-          onPress: () => setSelectedLocationForItinerary(location.id),
-        },
-        {
-          text: 'Check In',
-          onPress: () => doCheckIn(location),
-        },
+        { text: 'Directions', onPress: () => openDirections(location.latitude, location.longitude, location.name) },
+        { text: 'Add to Itinerary', onPress: () => setSelectedLocationForItinerary(location.id) },
+        { text: 'Check In', onPress: () => doCheckIn(location) },
       ],
     );
   };
@@ -183,9 +162,7 @@ export default function MapScreen() {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'PIN_CLICKED') {
         const location = locations.find(l => l.id === data.payload.id);
-        if (location) {
-          handleCheckIn(location);
-        }
+        if (location) handleCheckIn(location);
       }
     } catch (e) {
       console.error('[Map] WebView message error:', e);
@@ -193,19 +170,13 @@ export default function MapScreen() {
   };
 
   const handleFocusLocation = (location: Location) => {
-    const js = `
-      if (window.map) {
-        window.map.flyTo([${location.latitude}, ${location.longitude}], 16, {
-          animate: true,
-          duration: 1.5
-        });
-      }
+    webViewRef.current?.injectJavaScript(`
+      if (window.map) { window.map.flyTo([${location.latitude}, ${location.longitude}], 16, { animate: true, duration: 1.2 }); }
       true;
-    `;
-    webViewRef.current?.injectJavaScript(js);
+    `);
   };
 
-  // HTML content for the Leaflet map
+  // ── Leaflet map HTML ─────────────────────────────────────────────────────
   const mapHtml = `
     <!DOCTYPE html>
     <html>
@@ -214,73 +185,138 @@ export default function MapScreen() {
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100vw; background: #f0f0f0; }
-        .visited-marker { filter: grayscale(100%) opacity(0.6); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body, #map { height: 100%; width: 100%; background: #0C1B2A; }
+
+        /* Pulsing user dot */
+        @keyframes pulse {
+          0%   { transform: scale(1);   opacity: 0.4; }
+          70%  { transform: scale(2.5); opacity: 0; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        .user-pulse {
+          width: 14px; height: 14px; border-radius: 50%;
+          background: rgba(59,130,246,0.4);
+          animation: pulse 2s ease-out infinite;
+        }
+        .user-dot {
+          width: 14px; height: 14px; border-radius: 50%;
+          background: #3B82F6; border: 3px solid #fff;
+          box-shadow: 0 0 8px rgba(59,130,246,0.6);
+          position: absolute; top: 0; left: 0;
+        }
+
+        /* Custom pin markers */
+        .pin-marker {
+          display: flex; align-items: center; justify-content: center;
+          width: 36px; height: 36px; border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg); border: 2.5px solid #fff;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+          transition: transform 0.15s ease;
+        }
+        .pin-marker:hover { transform: rotate(-45deg) scale(1.15); }
+        .pin-marker .pin-inner {
+          transform: rotate(45deg); font-size: 16px; line-height: 1;
+        }
+        .pin-marker.visited {
+          opacity: 0.45; filter: saturate(0.3);
+          border-color: rgba(255,255,255,0.5);
+        }
+
+        /* Points badge */
+        .pts-badge {
+          position: absolute; top: -8px; right: -12px;
+          background: #1E293B; color: #FCD34D; font-size: 9px; font-weight: 800;
+          padding: 1px 5px; border-radius: 8px; white-space: nowrap;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3); letter-spacing: 0.3px;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .pin-marker.visited .pts-badge { display: none; }
+
+        /* Hide default Leaflet attribution bar — too large on mobile */
+        .leaflet-control-attribution { font-size: 8px !important; opacity: 0.5; }
       </style>
     </head>
     <body>
       <div id="map"></div>
       <script>
-        const map = L.map('map', { zoomControl: false }).setView([18.0425, -63.0548], 12);
-        window.map = map; // Make accessible for injectJavaScript
+        const COLORS = {
+          Beach: '#0EA5E9', Restaurant: '#F97316', Casino: '#EF4444',
+          Attraction: '#8B5CF6', Shopping: '#EC4899', Entertainment: '#10B981'
+        };
+        const EMOJI = {
+          Beach: '\\u{1F3D6}', Restaurant: '\\u{1F37D}', Casino: '\\u{1F3B0}',
+          Attraction: '\\u{1F3DB}', Shopping: '\\u{1F6CD}', Entertainment: '\\u{1F3B6}'
+        };
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
+        const map = L.map('map', {
+          zoomControl: false,
+          attributionControl: true
+        }).setView([18.0425, -63.0548], 12);
+        window.map = map;
+
+        // CartoDB Voyager — clean, modern, great water color
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://osm.org/">OSM</a>',
+          subdomains: 'abcd',
+          maxZoom: 19
         }).addTo(map);
 
         let markers = [];
 
+        function createPinIcon(category, visited, points) {
+          const color = COLORS[category] || '#6B7280';
+          const emoji = EMOJI[category] || '\\u{1F4CD}';
+          const html = '<div class="pin-marker ' + (visited ? 'visited' : '') + '" style="background:' + color + '">'
+            + '<span class="pin-inner">' + emoji + '</span>'
+            + '<span class="pts-badge">' + points + '</span>'
+            + '</div>';
+          return L.divIcon({
+            html: html,
+            className: '',
+            iconSize: [36, 36],
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -36]
+          });
+        }
+
         window.addEventListener('message', (event) => {
           let data;
-          try {
-            data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-          } catch (e) { return; }
+          try { data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
 
           if (data.type === 'SET_PINS') {
             markers.forEach(m => map.removeLayer(m));
             markers = [];
 
             data.payload.forEach(pin => {
-              const marker = L.marker([pin.lat, pin.lng]).addTo(map);
-              if (pin.visited) marker._icon.classList.add('visited-marker');
+              const icon = createPinIcon(pin.category, pin.visited, pin.points);
+              const marker = L.marker([pin.lat, pin.lng], { icon: icon }).addTo(map);
               marker.on('click', () => {
                 window.ReactNativeWebView.postMessage(JSON.stringify({
-                  type: 'PIN_CLICKED',
-                  payload: { id: pin.id }
+                  type: 'PIN_CLICKED', payload: { id: pin.id }
                 }));
               });
               markers.push(marker);
             });
 
             if (markers.length > 0 && !window.hasAdjustedOnce) {
-              const group = new L.featureGroup(markers);
-              map.fitBounds(group.getBounds().pad(0.1));
+              map.fitBounds(new L.featureGroup(markers).getBounds().pad(0.1));
               window.hasAdjustedOnce = true;
             }
           }
 
-          // FR-016: Show user's real-time location as a blue dot
           if (data.type === 'SET_USER_LOCATION') {
             const { lat, lng } = data.payload;
-            if (window.userLocationCircle) {
-              window.userLocationCircle.setLatLng([lat, lng]);
-              window.userLocationDot.setLatLng([lat, lng]);
+            if (window.userDot) {
+              window.userDot.setLatLng([lat, lng]);
             } else {
-              window.userLocationCircle = L.circle([lat, lng], {
-                radius: 40,
-                color: '#0066CC',
-                fillColor: '#0066CC',
-                fillOpacity: 0.15,
-                weight: 1
-              }).addTo(map);
-              window.userLocationDot = L.circleMarker([lat, lng], {
-                radius: 7,
-                color: '#FFFFFF',
-                weight: 2,
-                fillColor: '#0066CC',
-                fillOpacity: 1
-              }).addTo(map);
+              const icon = L.divIcon({
+                html: '<div class="user-pulse"></div><div class="user-dot"></div>',
+                className: '',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+              });
+              window.userDot = L.marker([lat, lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
             }
           }
         });
@@ -291,34 +327,52 @@ export default function MapScreen() {
     </html>
   `;
 
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Map</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Explore</Text>
+          {profile && (
+            <View style={styles.pointsPill}>
+              <Text style={styles.pointsText}>{profile.total_points} pts</Text>
+            </View>
+          )}
+        </View>
         {pendingCount > 0 && (
-          <Text style={styles.pendingBanner}>
-            {pendingCount} offline check-in{pendingCount > 1 ? 's' : ''} pending sync
-          </Text>
+          <View style={styles.pendingBanner}>
+            <Text style={styles.pendingText}>
+              {pendingCount} offline check-in{pendingCount > 1 ? 's' : ''} pending sync
+            </Text>
+          </View>
         )}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryBar}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryBar} contentContainerStyle={styles.categoryBarContent}>
           <TouchableOpacity
             style={[styles.categoryTab, !selectedCategory && styles.activeTab]}
             onPress={() => handleCategoryFilter(null)}
           >
             <Text style={[styles.categoryText, !selectedCategory && styles.activeTabText]}>All</Text>
           </TouchableOpacity>
-          {categories.map(cat => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryTab, selectedCategory === cat && styles.activeTab]}
-              onPress={() => handleCategoryFilter(cat)}
-            >
-              <Text style={[styles.categoryText, selectedCategory === cat && styles.activeTabText]}>{cat}</Text>
-            </TouchableOpacity>
-          ))}
+          {categories.map(cat => {
+            const cfg = CATEGORY_CONFIG[cat];
+            const active = selectedCategory === cat;
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.categoryTab, active && { backgroundColor: cfg.color }]}
+                onPress={() => handleCategoryFilter(cat)}
+              >
+                <Text style={[styles.categoryText, active && styles.activeTabText]}>
+                  {cfg.emoji} {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
 
+      {/* Map */}
       <View style={styles.mapContainer}>
         <WebView
           ref={webViewRef}
@@ -330,55 +384,67 @@ export default function MapScreen() {
         />
         {isLoading && (
           <View style={styles.loaderOverlay}>
-            <ActivityIndicator size="large" color="#0066CC" />
+            <ActivityIndicator size="large" color="#3B82F6" />
           </View>
         )}
       </View>
 
+      {/* Location List */}
       <FlatList
         data={filteredLocations}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={() => fetchLocations(true)} tintColor="#0066CC" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={() => fetchLocations(true)} tintColor="#3B82F6" />
         }
-        renderItem={({ item }) => (
-          <View style={[styles.locationCard, item.visited && styles.visitedCard]}>
+        renderItem={({ item }) => {
+          const cfg = CATEGORY_CONFIG[item.category] || { color: '#6B7280', emoji: '', bg: '#F9FAFB' };
+          return (
             <TouchableOpacity
-              style={styles.cardInfo}
+              activeOpacity={0.7}
               onPress={() => handleFocusLocation(item)}
+              style={[styles.locationCard, item.visited && styles.visitedCard]}
             >
-              <Text style={styles.locationName}>{item.name}</Text>
-              <Text style={styles.locationCategory}>{item.category} • {item.points} pts</Text>
-            </TouchableOpacity>
-            <View style={styles.cardActions}>
-              <TouchableOpacity
-                style={styles.directionsButton}
-                onPress={() => openDirections(item.latitude, item.longitude, item.name)}
-              >
-                <Text style={styles.directionsButtonText}>Go</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => setSelectedLocationForItinerary(item.id)}
-              >
-                <Text style={styles.addButtonText}>+ Add</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.checkInButton, item.visited && styles.visitedButton]}
-                onPress={() => handleCheckIn(item)}
-              >
-                <Text style={[styles.checkInText, item.visited && styles.visitedText]}>
-                  {item.visited ? '✓' : 'Check In'}
+              {/* Category icon bubble */}
+              <View style={[styles.iconBubble, { backgroundColor: cfg.bg }]}>
+                <Text style={styles.iconEmoji}>{cfg.emoji}</Text>
+              </View>
+
+              {/* Info */}
+              <View style={styles.cardInfo}>
+                <Text style={styles.locationName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.locationMeta}>
+                  <Text style={{ color: cfg.color, fontWeight: '700' }}>{item.category}</Text>
+                  {'  •  '}{item.points} pts
+                  {item.visited ? '  •  Visited' : ''}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+              </View>
+
+              {/* Actions */}
+              <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={styles.goButton}
+                  onPress={() => openDirections(item.latitude, item.longitude, item.name)}
+                >
+                  <Text style={styles.goButtonText}>Go</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.checkInBtn, item.visited && styles.checkInBtnVisited]}
+                  onPress={() => handleCheckIn(item)}
+                >
+                  <Text style={[styles.checkInBtnText, item.visited && styles.checkInBtnTextVisited]}>
+                    {item.visited ? '\u2713' : 'Check In'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No locations found in this category.</Text>
+              <Text style={styles.emptyEmoji}>{selectedCategory ? CATEGORY_CONFIG[selectedCategory]?.emoji : ''}</Text>
+              <Text style={styles.emptyText}>No locations found.</Text>
             </View>
           ) : null
         }
@@ -404,34 +470,115 @@ export default function MapScreen() {
   );
 }
 
+// ── Styles ───────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#FFFFFF', paddingTop: 40, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#F3F4F6' },
-  title: { fontSize: 28, fontWeight: '700', color: '#1A1A1A', marginBottom: 8 },
-  pendingBanner: { fontSize: 12, color: '#F59E0B', fontWeight: '600', marginBottom: 8, backgroundColor: '#FFFBEB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4, overflow: 'hidden' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+
+  // Header
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingTop: 48,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  title: { fontSize: 26, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+  pointsPill: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  pointsText: { fontSize: 13, fontWeight: '800', color: '#92400E' },
+
+  pendingBanner: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  pendingText: { fontSize: 12, fontWeight: '600', color: '#92400E' },
+
   categoryBar: { flexDirection: 'row' },
-  categoryTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', marginRight: 8 },
-  activeTab: { backgroundColor: '#0066CC' },
-  categoryText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
+  categoryBarContent: { paddingRight: 20 },
+  categoryTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    marginRight: 8,
+  },
+  activeTab: { backgroundColor: '#0F172A' },
+  categoryText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   activeTabText: { color: '#FFFFFF' },
-  mapContainer: { height: 350, backgroundColor: '#E5E7EB' },
+
+  // Map
+  mapContainer: { height: 380, backgroundColor: '#0C1B2A' },
   map: { flex: 1 },
-  loaderOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.7)', justifyContent: 'center', alignItems: 'center' },
-  listContent: { padding: 16, paddingBottom: 100 },
-  locationCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 12, borderRadius: 12, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  visitedCard: { opacity: 0.7 },
-  cardInfo: { flex: 1 },
-  locationName: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
-  locationCategory: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15,23,42,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Location list
+  listContent: { padding: 14, paddingBottom: 100 },
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  visitedCard: { opacity: 0.55 },
+
+  iconBubble: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  iconEmoji: { fontSize: 20 },
+
+  cardInfo: { flex: 1, marginRight: 8 },
+  locationName: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  locationMeta: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+
   cardActions: { flexDirection: 'row', gap: 6 },
-  directionsButton: { borderWidth: 1, borderColor: '#10B981', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
-  directionsButtonText: { color: '#10B981', fontWeight: '700', fontSize: 12 },
-  addButton: { borderWidth: 1, borderColor: '#0066CC', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
-  addButtonText: { color: '#0066CC', fontWeight: '600', fontSize: 12 },
-  checkInButton: { backgroundColor: '#0066CC', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
-  visitedButton: { backgroundColor: '#E5E7EB' },
-  checkInText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12 },
-  visitedText: { color: '#9CA3AF' },
-  emptyContainer: { alignItems: 'center', padding: 40 },
-  emptyText: { color: '#6B7280', fontSize: 16 },
+  goButton: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
+  },
+  goButtonText: { color: '#16A34A', fontWeight: '800', fontSize: 12 },
+
+  checkInBtn: {
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
+  },
+  checkInBtnVisited: { backgroundColor: '#F1F5F9' },
+  checkInBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 12 },
+  checkInBtnTextVisited: { color: '#94A3B8' },
+
+  emptyContainer: { alignItems: 'center', paddingVertical: 60 },
+  emptyEmoji: { fontSize: 40, marginBottom: 12 },
+  emptyText: { color: '#94A3B8', fontSize: 16, fontWeight: '500' },
 });

@@ -110,7 +110,11 @@ export default function LeaderboardScreen() {
   const renderItem = ({ item }: { item: LeaderboardEntry }) => {
     const isCurrentUser = item.user_id === profile?.id;
     return (
-      <View style={[styles.itemContainer, isCurrentUser && styles.currentUserItem]}>
+      <View
+        style={[styles.itemContainer, isCurrentUser && styles.currentUserItem]}
+        accessible={true}
+        accessibilityLabel={`Rank ${item.rank}. ${item.display_name || 'Anonymous Traveler'}. ${item.points} points${isCurrentUser ? '. This is you' : ''}`}
+      >
         <View style={styles.rankContainer}>
           <Text style={[styles.rankText, item.rank <= 3 && styles.topRankText]}>{item.rank}</Text>
         </View>
@@ -142,7 +146,7 @@ export default function LeaderboardScreen() {
         <Text style={styles.groupName}>{item.name}</Text>
         <Text style={styles.inviteCode}>Code: {item.invite_code}</Text>
       </View>
-      <Text style={styles.viewText}>View > </Text>
+      <Text style={styles.viewText}>{'View >'}</Text>
     </TouchableOpacity>
   );
 

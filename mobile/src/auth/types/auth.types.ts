@@ -10,6 +10,9 @@ export interface Profile {
   bio: string;
   total_points: number;
   visit_count: number;
+  current_streak: number;
+  longest_streak: number;
+  last_check_in_date: string | null;
   achievements?: string[];
   location_tracking_enabled: boolean;
   gdpr_consent_at: string | null;
