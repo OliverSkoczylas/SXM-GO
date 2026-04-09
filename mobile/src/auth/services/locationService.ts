@@ -9,6 +9,7 @@
 import { getSupabaseClient } from './supabaseClient';
 import { cacheLocations, getCachedLocations, queueOfflineCheckIn, syncPendingCheckIns, isOnline } from './offlineService';
 import { validateCheckIn, recordCheckInPosition, flagSuspiciousCheckIn } from './fraudDetectionService';
+import { updateWeeklyChallengeProgress } from './weeklyChallengeService';
 
 export interface Location {
   id: string;
@@ -175,6 +176,9 @@ export async function checkIn(location: Location): Promise<CheckInResult> {
     flagSuspiciousCheckIn(location.id, validation.fraudResult, gps.latitude, gps.longitude)
       .catch(e => console.warn('[Fraud] Failed to flag:', e));
   }
+
+  // FR-070: Update weekly challenge progress (non-blocking)
+  updateWeeklyChallengeProgress().catch(e => console.warn('[Weekly] Progress update failed:', e));
 
   return { error: null, flagged, offline: false };
 }

@@ -1,10 +1,22 @@
 import { getSupabaseClient } from './supabaseClient';
-import type { 
-  Itinerary, 
-  ItineraryWithItems, 
-  CreateItineraryInput, 
-  UpdateItineraryInput 
+import type {
+  Itinerary,
+  ItineraryWithItems,
+  CreateItineraryInput,
+  UpdateItineraryInput
 } from '../types/itinerary.types';
+
+// FR-048: Haversine distance in km between two GPS points
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export const itineraryService = {
   async getMyItineraries(): Promise<Itinerary[]> {
@@ -140,5 +152,70 @@ export const itineraryService = {
       })));
 
     if (error) throw error;
+  },
+
+  // FR-048: Calculate total distance and estimated time for an itinerary
+  async calculateItineraryStats(itineraryId: string): Promise<{ distanceKm: number; estimatedMinutes: number }> {
+    const details = await this.getItineraryDetails(itineraryId);
+    const items = details.items || [];
+
+    if (items.length < 2) {
+      return { distanceKm: 0, estimatedMinutes: items.length * 15 };
+    }
+
+    let totalKm = 0;
+    for (let i = 0; i < items.length - 1; i++) {
+      const a = items[i].locations;
+      const b = items[i + 1].locations;
+      totalKm += haversineKm(a.latitude, a.longitude, b.latitude, b.longitude);
+    }
+
+    // Estimate: 15 min per location + 3 min per km travel
+    const estimatedMinutes = Math.round(items.length * 15 + totalKm * 3);
+
+    // Persist to DB
+    const supabase = getSupabaseClient();
+    await supabase
+      .from('itineraries')
+      .update({ total_distance_km: Math.round(totalKm * 10) / 10, estimated_minutes: estimatedMinutes })
+      .eq('id', itineraryId);
+
+    return { distanceKm: Math.round(totalKm * 10) / 10, estimatedMinutes };
+  },
+
+  // FR-038: Award completion bonus when all locations in itinerary are visited
+  async completeItinerary(itineraryId: string): Promise<{ bonus: number }> {
+    const supabase = getSupabaseClient();
+
+    // Mark as completed
+    await supabase
+      .from('itineraries')
+      .update({ status: 'completed' })
+      .eq('id', itineraryId);
+
+    // Call RPC for 1.5x bonus
+    const { data, error } = await supabase.rpc('award_itinerary_completion', {
+      p_itinerary_id: itineraryId
+    });
+
+    return { bonus: error ? 0 : (data as number) };
+  },
+
+  // FR-055: Duplicate another user's shared itinerary
+  async duplicateItinerary(sourceId: string): Promise<Itinerary> {
+    const source = await this.getItineraryDetails(sourceId);
+    const newItinerary = await this.createItinerary({
+      name: `${source.name} (Copy)`,
+      description: source.description,
+      is_public: false,
+      difficulty: source.difficulty,
+    });
+
+    // Copy items
+    for (const item of source.items || []) {
+      await this.addItemToItinerary(newItinerary.id, item.location_id, item.order_index);
+    }
+
+    return newItinerary;
   }
 };

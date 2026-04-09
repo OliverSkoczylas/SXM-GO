@@ -59,9 +59,14 @@ function BadgeCard({ progress }: { progress: BadgeProgress }) {
   const fullyCompleted = earnedTier === maxTier?.tier;
 
   return (
-    <View style={[styles.card, fullyCompleted && styles.cardCompleted]}>
+    <View
+      style={[styles.card, fullyCompleted && styles.cardCompleted]}
+      accessible={true}
+      accessibilityLabel={`${badge.name} badge. ${badge.description}. ${earnedTier ? earnedTier + ' tier earned' : 'Not yet earned'}`}
+      accessibilityRole="summary"
+    >
       <View style={styles.cardHeader}>
-        <Text style={styles.icon}>{badge.icon}</Text>
+        <Text style={styles.icon} accessibilityElementsHidden>{badge.icon}</Text>
         <View style={styles.cardMeta}>
           <Text style={styles.badgeName}>{badge.name}</Text>
           <Text style={styles.badgeDesc}>{badge.description}</Text>
@@ -143,8 +148,8 @@ export default function ChallengesScreen() {
       }
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Challenges</Text>
-        <Text style={styles.subtitle}>
+        <Text style={styles.title} accessibilityRole="header">Challenges</Text>
+        <Text style={styles.subtitle} accessibilityLabel={`${earned.length} of ${progressList.length} badges earned`}>
           {earned.length} of {progressList.length} badges earned
         </Text>
       </View>
