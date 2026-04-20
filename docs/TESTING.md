@@ -1,4 +1,5 @@
 # Testing Guide
+Author: Taylor Knipe
 
 ## Overview
 

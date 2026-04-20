@@ -1,4 +1,5 @@
 # SXM GO Features Guide
+Author: Taylor Knipe
 
 ## Overview
 

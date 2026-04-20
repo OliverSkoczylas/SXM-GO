@@ -1,4 +1,5 @@
 # FAQs
+Author: Taylor Knipe
 
 ## 1. Why am I signed out or why didn’t my session restore when I reopened the app?
 

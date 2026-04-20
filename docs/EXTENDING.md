@@ -1,4 +1,5 @@
 # Extending the Application
+Author: Taylor Knipe
 
 ## Overview
 

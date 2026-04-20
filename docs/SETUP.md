@@ -1,4 +1,5 @@
 # SXM GO - React Native Setup Guide
+Author: Oliver Skoczylas
 
 ## Prerequisites
 
