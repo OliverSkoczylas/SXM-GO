@@ -202,27 +202,45 @@ export default function ProfileScreen() {
       <View style={styles.menuSection}>
         <TouchableOpacity
           style={styles.menuItem}
+          onPress={() => navigation.navigate('Friends')}
+        >
+          <Text style={styles.menuItemText}>Friends</Text>
+          <Text style={styles.menuItemArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('ActivityHistory')}
+        >
+          <Text style={styles.menuItemText}>Activity History</Text>
+          <Text style={styles.menuItemArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('ItineraryList')}
         >
           <Text style={styles.menuItemText}>My Itineraries</Text>
+          <Text style={styles.menuItemArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('Settings')}
         >
           <Text style={styles.menuItemText}>Settings</Text>
+          <Text style={styles.menuItemArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('PrivacySettings')}
         >
           <Text style={styles.menuItemText}>Privacy & Data</Text>
+          <Text style={styles.menuItemArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('ChangePassword')}
         >
           <Text style={styles.menuItemText}>Change Password</Text>
+          <Text style={styles.menuItemArrow}>›</Text>
         </TouchableOpacity>
       </View>
 
@@ -342,9 +360,13 @@ const styles = StyleSheet.create({
   activityPoints: { fontSize: 14, fontWeight: '700', color: '#059669' },
   menuSection: { gap: 1 },
   menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderColor: '#F3F4F6',
   },
   menuItemText: { fontSize: 16, color: '#1A1A1A' },
+  menuItemArrow: { fontSize: 20, color: '#C7C7CC', fontWeight: '300' },
 });
