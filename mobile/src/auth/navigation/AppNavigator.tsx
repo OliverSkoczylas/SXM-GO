@@ -29,6 +29,13 @@ export type AppTabParamList = {
   ProfileTab: undefined;
 };
 
+export type MapStackParamList = {
+  Map: undefined;
+  LocationDetail: { locationId: string };
+  ActivityLive: undefined;
+  ActivityDetail: { activityId: string };
+};
+
 export type ProfileStackParamList = {
   Profile: undefined;
   Settings: undefined;
@@ -37,6 +44,10 @@ export type ProfileStackParamList = {
   ItineraryList: undefined;
   ItineraryDetail: { id: string };
   CreateItinerary: undefined;
+  ActivityHistory: undefined;
+  ActivityDetail: { activityId: string };
+  Friends: undefined;
+  UserProfile: { userId: string };
 };
 
 // ── Navigators ──
@@ -47,6 +58,41 @@ const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 import ItineraryListScreen from '../screens/ItineraryListScreen';
 import ItineraryDetailScreen from '../screens/ItineraryDetailScreen';
 import CreateItineraryScreen from '../screens/CreateItineraryScreen';
+import FriendsScreen from '../screens/FriendsScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
+import LocationDetailScreen from '../screens/LocationDetailScreen';
+import ActivityScreen from '../screens/ActivityScreen';
+import ActivityHistoryScreen from '../screens/ActivityHistoryScreen';
+import ActivityDetailScreen from '../screens/ActivityDetailScreen';
+
+const MapStack = createNativeStackNavigator<MapStackParamList>();
+
+function MapStackNavigator() {
+  return (
+    <MapStack.Navigator>
+      <MapStack.Screen
+        name="Map"
+        component={MapScreen}
+        options={{ headerShown: false }}
+      />
+      <MapStack.Screen
+        name="LocationDetail"
+        component={LocationDetailScreen}
+        options={{ headerTitle: 'Location' }}
+      />
+      <MapStack.Screen
+        name="ActivityLive"
+        component={ActivityScreen}
+        options={{ headerShown: false }}
+      />
+      <MapStack.Screen
+        name="ActivityDetail"
+        component={ActivityDetailScreen}
+        options={{ headerTitle: 'Activity' }}
+      />
+    </MapStack.Navigator>
+  );
+}
 
 function ProfileStackNavigator() {
   return (
@@ -86,6 +132,26 @@ function ProfileStackNavigator() {
         component={CreateItineraryScreen}
         options={{ headerTitle: 'New Itinerary' }}
       />
+      <ProfileStack.Screen
+        name="Friends"
+        component={FriendsScreen}
+        options={{ headerTitle: 'Friends' }}
+      />
+      <ProfileStack.Screen
+        name="ActivityHistory"
+        component={ActivityHistoryScreen}
+        options={{ headerTitle: 'Activity History' }}
+      />
+      <ProfileStack.Screen
+        name="ActivityDetail"
+        component={ActivityDetailScreen}
+        options={{ headerTitle: 'Activity' }}
+      />
+      <ProfileStack.Screen
+        name="UserProfile"
+        component={UserProfileScreen}
+        options={{ headerTitle: 'Profile' }}
+      />
     </ProfileStack.Navigator>
   );
 }
@@ -114,7 +180,7 @@ export function AppNavigator() {
     >
       <Tab.Screen
         name="MapTab"
-        component={MapScreen}
+        component={MapStackNavigator}
         options={{ tabBarLabel: 'Map' }}
       />
       <Tab.Screen

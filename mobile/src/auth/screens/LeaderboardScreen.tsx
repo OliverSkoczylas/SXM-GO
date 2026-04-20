@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,64 @@ import type { LeaderboardEntry } from '../types/auth.types';
 import { useAuth } from '../hooks/useAuth';
 
 export type ExtendedLeaderboardType = LeaderboardType | 'groups';
+
+// ── Memoized list items for FlatList performance ──
+
+const LeaderboardItem = React.memo(function LeaderboardItem({
+  item,
+  isCurrentUser,
+}: {
+  item: LeaderboardEntry;
+  isCurrentUser: boolean;
+}) {
+  return (
+    <View
+      style={[styles.itemContainer, isCurrentUser && styles.currentUserItem]}
+      accessible={true}
+      accessibilityLabel={`Rank ${item.rank}. ${item.display_name || 'Anonymous Traveler'}. ${item.points} points${isCurrentUser ? '. This is you' : ''}`}
+    >
+      <View style={styles.rankContainer}>
+        <Text style={[styles.rankText, item.rank <= 3 && styles.topRankText]}>{item.rank}</Text>
+      </View>
+      {item.avatar_url ? (
+        <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <Text style={styles.avatarInitial}>
+            {(item.display_name || 'A')[0].toUpperCase()}
+          </Text>
+        </View>
+      )}
+      <View style={styles.userInfo}>
+        <Text style={[styles.userName, isCurrentUser && styles.currentUserName]} numberOfLines={1}>
+          {item.display_name || 'Anonymous Traveler'}
+        </Text>
+      </View>
+      <View style={styles.pointsContainer}>
+        <Text style={styles.pointsText}>{item.points.toLocaleString()}</Text>
+        <Text style={styles.ptsLabel}>pts</Text>
+      </View>
+    </View>
+  );
+});
+
+const GroupItem = React.memo(function GroupItem({
+  item,
+  onPress,
+}: {
+  item: Group;
+  onPress: (group: Group) => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.groupCard} onPress={() => onPress(item)}>
+      <View style={styles.groupInfo}>
+        <Text style={styles.groupName}>{item.name}</Text>
+        <Text style={styles.inviteCode}>Code: {item.invite_code}</Text>
+      </View>
+      <Text style={styles.viewText}>{'View >'}</Text>
+    </TouchableOpacity>
+  );
+});
 
 export default function LeaderboardScreen() {
   const { profile } = useAuth();
@@ -56,7 +114,7 @@ export default function LeaderboardScreen() {
     setIsRefreshing(false);
   }, []);
 
-  const fetchGroupLeaderboard = async (group: Group) => {
+  const fetchGroupLeaderboard = useCallback(async (group: Group) => {
     setIsLoading(true);
     const { data, error: groupError } = await getGroupLeaderboardData(group.id);
     if (groupError) {
@@ -66,7 +124,7 @@ export default function LeaderboardScreen() {
       setSelectedGroup(group);
     }
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (!selectedGroup) {
@@ -107,48 +165,15 @@ export default function LeaderboardScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: LeaderboardEntry }) => {
-    const isCurrentUser = item.user_id === profile?.id;
-    return (
-      <View
-        style={[styles.itemContainer, isCurrentUser && styles.currentUserItem]}
-        accessible={true}
-        accessibilityLabel={`Rank ${item.rank}. ${item.display_name || 'Anonymous Traveler'}. ${item.points} points${isCurrentUser ? '. This is you' : ''}`}
-      >
-        <View style={styles.rankContainer}>
-          <Text style={[styles.rankText, item.rank <= 3 && styles.topRankText]}>{item.rank}</Text>
-        </View>
-        {item.avatar_url ? (
-          <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarInitial}>
-              {(item.display_name || 'A')[0].toUpperCase()}
-            </Text>
-          </View>
-        )}
-        <View style={styles.userInfo}>
-          <Text style={[styles.userName, isCurrentUser && styles.currentUserName]} numberOfLines={1}>
-            {item.display_name || 'Anonymous Traveler'}
-          </Text>
-        </View>
-        <View style={styles.pointsContainer}>
-          <Text style={styles.pointsText}>{item.points.toLocaleString()}</Text>
-          <Text style={styles.ptsLabel}>pts</Text>
-        </View>
-      </View>
-    );
-  };
+  const currentUserId = profile?.id;
 
-  const renderGroupItem = ({ item }: { item: Group }) => (
-    <TouchableOpacity style={styles.groupCard} onPress={() => fetchGroupLeaderboard(item)}>
-      <View style={styles.groupInfo}>
-        <Text style={styles.groupName}>{item.name}</Text>
-        <Text style={styles.inviteCode}>Code: {item.invite_code}</Text>
-      </View>
-      <Text style={styles.viewText}>{'View >'}</Text>
-    </TouchableOpacity>
-  );
+  const renderItem = useCallback(({ item }: { item: LeaderboardEntry }) => (
+    <LeaderboardItem item={item} isCurrentUser={item.user_id === currentUserId} />
+  ), [currentUserId]);
+
+  const renderGroupItem = useCallback(({ item }: { item: Group }) => (
+    <GroupItem item={item} onPress={fetchGroupLeaderboard} />
+  ), [fetchGroupLeaderboard]);
 
   const TabButton = ({ type, label }: { type: ExtendedLeaderboardType; label: string }) => (
     <TouchableOpacity
@@ -191,6 +216,10 @@ export default function LeaderboardScreen() {
             renderItem={renderGroupItem}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            removeClippedSubviews={true}
             ListEmptyComponent={<View style={styles.emptyContainer}><Text style={styles.emptyText}>You haven't joined any groups yet.</Text></View>}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#0066CC" />}
           />
@@ -206,6 +235,10 @@ export default function LeaderboardScreen() {
             renderItem={renderItem}
             keyExtractor={(item, index) => `${item.user_id}-${index}`}
             contentContainerStyle={styles.listContent}
+            initialNumToRender={15}
+            maxToRenderPerBatch={15}
+            windowSize={5}
+            removeClippedSubviews={true}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#0066CC" />}
             ListEmptyComponent={<View style={styles.emptyContainer}><Text style={styles.emptyText}>No rankings available.</Text></View>}
           />

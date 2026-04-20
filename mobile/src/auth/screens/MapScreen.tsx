@@ -5,7 +5,7 @@
 // FR-024: Offline map caching
 // FR-027 to FR-035: Check-in mechanism with GPS proximity + anti-fraud
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,12 +19,17 @@ import {
   Platform,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MapStackParamList } from '../navigation/AppNavigator';
 import { getLocations, checkIn, Location } from '../services/locationService';
 import { openDirections } from '../services/directionsService';
 import { getPendingCheckIns } from '../services/offlineService';
 import { useAuth } from '../hooks/useAuth';
 import Toast from '../../shared/components/Toast';
 import AddToItineraryModal from '../components/AddToItineraryModal';
+
+type MapNav = NativeStackNavigationProp<MapStackParamList, 'Map'>;
 
 // Category config — colors and emoji for pins + UI
 const CATEGORY_CONFIG: Record<string, { color: string; emoji: string; bg: string }> = {
@@ -35,6 +40,64 @@ const CATEGORY_CONFIG: Record<string, { color: string; emoji: string; bg: string
   Shopping:      { color: '#EC4899', emoji: '\u{1F6CD}',  bg: '#FDF2F8' },
   Entertainment: { color: '#10B981', emoji: '\u{1F3B6}',  bg: '#ECFDF5' },
 };
+
+// ── Memoized location card for FlatList performance ──
+const LocationCard = React.memo(function LocationCard({
+  item,
+  onPress,
+  onDirections,
+  onCheckIn,
+  onViewDetail,
+}: {
+  item: Location;
+  onPress: (item: Location) => void;
+  onDirections: (lat: number, lng: number, name: string) => void;
+  onCheckIn: (item: Location) => void;
+  onViewDetail: (locationId: string) => void;
+}) {
+  const cfg = CATEGORY_CONFIG[item.category] || { color: '#6B7280', emoji: '', bg: '#F9FAFB' };
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => onPress(item)}
+      style={[styles.locationCard, item.visited && styles.visitedCard]}
+    >
+      <View style={[styles.iconBubble, { backgroundColor: cfg.bg }]}>
+        <Text style={styles.iconEmoji}>{cfg.emoji}</Text>
+      </View>
+      <View style={styles.cardInfo}>
+        <Text style={styles.locationName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.locationMeta}>
+          <Text style={{ color: cfg.color, fontWeight: '700' }}>{item.category}</Text>
+          {'  •  '}{item.points} pts
+          {item.visited ? '  •  Visited' : ''}
+        </Text>
+      </View>
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={styles.infoButton}
+          onPress={() => onViewDetail(item.id)}
+        >
+          <Text style={styles.infoButtonText}>ℹ</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.goButton}
+          onPress={() => onDirections(item.latitude, item.longitude, item.name)}
+        >
+          <Text style={styles.goButtonText}>Go</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.checkInBtn, item.visited && styles.checkInBtnVisited]}
+          onPress={() => onCheckIn(item)}
+        >
+          <Text style={[styles.checkInBtnText, item.visited && styles.checkInBtnTextVisited]}>
+            {item.visited ? '\u2713' : 'Check In'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 function getUserLocation(): Promise<{ lat: number; lng: number } | null> {
   return new Promise((resolve) => {
@@ -52,6 +115,7 @@ function getUserLocation(): Promise<{ lat: number; lng: number } | null> {
 
 export default function MapScreen() {
   const { profile, refreshProfile } = useAuth();
+  const navigation = useNavigation<MapNav>();
   const [locations, setLocations] = useState<Location[]>([]);
   const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -121,7 +185,7 @@ export default function MapScreen() {
     updateMapPins(filtered);
   };
 
-  const doCheckIn = async (location: Location) => {
+  const doCheckIn = useCallback(async (location: Location) => {
     const result = await checkIn(location);
     if (result.error) {
       Alert.alert('Check-In Failed', result.error.message || 'Failed to check in.');
@@ -138,9 +202,9 @@ export default function MapScreen() {
     }
     fetchLocations(true);
     refreshProfile();
-  };
+  }, [fetchLocations, refreshProfile]);
 
-  const handleCheckIn = async (location: Location) => {
+  const handleCheckIn = useCallback(async (location: Location) => {
     if (location.visited) {
       Alert.alert('Already Visited', 'You have already checked in at this location.');
       return;
@@ -155,7 +219,7 @@ export default function MapScreen() {
         { text: 'Check In', onPress: () => doCheckIn(location) },
       ],
     );
-  };
+  }, [locations, doCheckIn]);
 
   const onMessage = (event: any) => {
     try {
@@ -169,12 +233,30 @@ export default function MapScreen() {
     }
   };
 
-  const handleFocusLocation = (location: Location) => {
+  const handleFocusLocation = useCallback((location: Location) => {
     webViewRef.current?.injectJavaScript(`
       if (window.map) { window.map.flyTo([${location.latitude}, ${location.longitude}], 16, { animate: true, duration: 1.2 }); }
       true;
     `);
-  };
+  }, []);
+
+  const handleDirections = useCallback((lat: number, lng: number, name: string) => {
+    openDirections(lat, lng, name);
+  }, []);
+
+  const handleViewDetail = useCallback((locationId: string) => {
+    navigation.navigate('LocationDetail', { locationId });
+  }, [navigation]);
+
+  const renderLocationCard = useCallback(({ item }: { item: Location }) => (
+    <LocationCard
+      item={item}
+      onPress={handleFocusLocation}
+      onDirections={handleDirections}
+      onCheckIn={handleCheckIn}
+      onViewDetail={handleViewDetail}
+    />
+  ), [handleFocusLocation, handleDirections, handleCheckIn, handleViewDetail]);
 
   // ── Leaflet map HTML ─────────────────────────────────────────────────────
   const mapHtml = `
@@ -394,52 +476,15 @@ export default function MapScreen() {
         data={filteredLocations}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        renderItem={renderLocationCard}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
+        getItemLayout={(_data, index) => ({ length: 80, offset: 80 * index, index })}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={() => fetchLocations(true)} tintColor="#3B82F6" />
         }
-        renderItem={({ item }) => {
-          const cfg = CATEGORY_CONFIG[item.category] || { color: '#6B7280', emoji: '', bg: '#F9FAFB' };
-          return (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => handleFocusLocation(item)}
-              style={[styles.locationCard, item.visited && styles.visitedCard]}
-            >
-              {/* Category icon bubble */}
-              <View style={[styles.iconBubble, { backgroundColor: cfg.bg }]}>
-                <Text style={styles.iconEmoji}>{cfg.emoji}</Text>
-              </View>
-
-              {/* Info */}
-              <View style={styles.cardInfo}>
-                <Text style={styles.locationName} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.locationMeta}>
-                  <Text style={{ color: cfg.color, fontWeight: '700' }}>{item.category}</Text>
-                  {'  •  '}{item.points} pts
-                  {item.visited ? '  •  Visited' : ''}
-                </Text>
-              </View>
-
-              {/* Actions */}
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.goButton}
-                  onPress={() => openDirections(item.latitude, item.longitude, item.name)}
-                >
-                  <Text style={styles.goButtonText}>Go</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.checkInBtn, item.visited && styles.checkInBtnVisited]}
-                  onPress={() => handleCheckIn(item)}
-                >
-                  <Text style={[styles.checkInBtnText, item.visited && styles.checkInBtnTextVisited]}>
-                    {item.visited ? '\u2713' : 'Check In'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyContainer}>
@@ -449,6 +494,15 @@ export default function MapScreen() {
           ) : null
         }
       />
+
+      {/* Activity Record FAB */}
+      <TouchableOpacity
+        style={styles.recordFab}
+        onPress={() => navigation.navigate('ActivityLive')}
+        accessibilityLabel="Start activity tracking"
+      >
+        <Text style={styles.recordFabText}>🏃</Text>
+      </TouchableOpacity>
 
       <AddToItineraryModal
         visible={!!selectedLocationForItinerary}
@@ -581,4 +635,35 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', paddingVertical: 60 },
   emptyEmoji: { fontSize: 40, marginBottom: 12 },
   emptyText: { color: '#94A3B8', fontSize: 16, fontWeight: '500' },
+
+  // Activity record FAB
+  recordFab: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  recordFabText: { fontSize: 24 },
+
+  // Info button on location cards
+  infoButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  infoButtonText: { fontSize: 16, color: '#3B82F6' },
 });

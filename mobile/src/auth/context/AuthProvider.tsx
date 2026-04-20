@@ -14,6 +14,9 @@ import { getSupabaseClient } from '../services/supabaseClient';
 import { initializeOAuthProviders } from '../services/oauthConfig';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Track whether init() already handled the session so onAuthStateChange
+  // doesn't duplicate the profile/prefs fetch (race-condition fix).
+  const initHandledRef = React.useRef(false);
   const [state, setState] = useState<AuthState>({
     isLoading: true,
     isAuthenticated: false,
@@ -23,6 +26,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     preferences: null,
     onboardingSeen: false,
   });
+
+  // Helper: fetch a promise with a generous timeout; resolves with
+  // { data: null } on failure instead of throwing so the app still loads.
+  const safeFetch = async (promise: Promise<any>, label: string, ms = 15000) => {
+    try {
+      return await Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timeout`)), ms),
+        ),
+      ]);
+    } catch (e) {
+      console.warn(`[AuthProvider] ${label} failed or timed out:`, e);
+      return { data: null, error: e };
+    }
+  };
 
   // On mount: initialize OAuth providers and restore session from Keychain (FR-001, FR-004)
   useEffect(() => {
@@ -39,10 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const onboardingSeen = onboardingVal === '1';
 
         if (user && session) {
+          // Mark that init() is handling this session so the SIGNED_IN
+          // listener below doesn't duplicate the work.
+          initHandledRef.current = true;
+
           console.log('[AuthProvider] Session found, fetching profile/preferences for:', user.id);
-          const [{ data: profile }, { data: preferences }] = await Promise.all([
-            profileService.getProfile(user.id),
-            preferencesService.getPreferences(user.id),
+          const [profileRes, prefsRes] = await Promise.all([
+            safeFetch(profileService.getProfile(user.id), 'Profile'),
+            safeFetch(preferencesService.getPreferences(user.id), 'Preferences'),
           ]);
           console.log('[AuthProvider] Profile/Preferences fetched successfully.');
           setState({
@@ -50,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isAuthenticated: true,
             user,
             session,
-            profile,
-            preferences,
+            profile: profileRes.data,
+            preferences: prefsRes.data,
             onboardingSeen,
           });
         } else {
@@ -74,26 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AuthProvider] Auth event received:', event, session?.user?.id ? 'with user' : 'no user');
             if (event === 'SIGNED_IN' && session?.user) {
+              // If init() already restored this session, skip the duplicate fetch.
+              if (initHandledRef.current) {
+                console.log('[AuthProvider] SIGNED_IN event skipped — init() already handled session.');
+                initHandledRef.current = false; // Reset for future sign-ins
+                return;
+              }
+
               console.log('[AuthProvider] SIGNED_IN event: fetching profile/prefs...');
-              
-              // Helper to fetch with a short timeout
-              const fetchWithTimeout = async (promise: Promise<any>, label: string) => {
-                try {
-                  return await Promise.race([
-                    promise,
-                    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), 15000))
-                  ]);
-                } catch (e) {
-                  console.warn(`[AuthProvider] ${label} failed or timed out:`, e);
-                  return { data: null, error: e };
-                }
-              };
-      
+
               const [profileRes, prefsRes] = await Promise.all([
-                fetchWithTimeout(profileService.getProfile(session.user.id), 'Profile'),
-                fetchWithTimeout(preferencesService.getPreferences(session.user.id), 'Preferences'),
+                safeFetch(profileService.getProfile(session.user.id), 'Profile'),
+                safeFetch(preferencesService.getPreferences(session.user.id), 'Preferences'),
               ]);
-      
+
               console.log('[AuthProvider] SIGNED_IN event: proceeding with available data.');
               setState((prev) => ({
                 ...prev,

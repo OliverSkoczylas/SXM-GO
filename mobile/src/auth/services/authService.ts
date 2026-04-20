@@ -156,7 +156,7 @@ export async function signInWithFacebook(): Promise<AuthResult> {
 
 export async function restoreSession(): Promise<AuthResult> {
   const supabase = getSupabaseClient();
-  const { data, error } = await withTimeout(supabase.auth.getSession(), 8000);
+  const { data, error } = await withTimeout(supabase.auth.getSession(), 15000);
   return {
     user: data.session?.user ?? null,
     session: data.session ?? null,
