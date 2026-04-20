@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MapStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../hooks/useAuth';
+import { log } from '../../shared/services/logger';
 import {
   startActivity,
   addRoutePoint,
@@ -203,9 +204,11 @@ export default function ActivityScreen() {
       setCurrentPosition(pos);
       sendRouteToMap(newPoints, pos);
 
-      // Persist point asynchronously — fire-and-forget, errors are non-fatal
+      // Persist point asynchronously — log errors for debugging
       if (activityIdRef.current) {
-        addRoutePoint(activityIdRef.current, point).catch(() => {});
+        addRoutePoint(activityIdRef.current, point).catch((error) => {
+          log.warn(`[Activity] Failed to save route point:`, error);
+        });
       }
     },
     [sendRouteToMap],
@@ -217,9 +220,12 @@ export default function ActivityScreen() {
       distanceFilter: 10,
       interval: 5000,
     };
+    const handleGPSError = (error: any) => {
+      log.warn(`[Activity] GPS error: ${error.message}`);
+    };
     watchIdRef.current = navigator.geolocation.watchPosition(
       handlePositionUpdate,
-      () => {}, // silently ignore individual GPS errors
+      handleGPSError,
       options,
     );
   }, [handlePositionUpdate]);
