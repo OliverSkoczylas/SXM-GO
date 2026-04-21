@@ -7,6 +7,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -182,7 +183,7 @@ export default function ActivityScreen() {
       timerRef.current = null;
     }
     if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
+      Geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
   }, []);
@@ -223,7 +224,7 @@ export default function ActivityScreen() {
     const handleGPSError = (error: any) => {
       log.warn(`[Activity] GPS error: ${error.message}`);
     };
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    watchIdRef.current = Geolocation.watchPosition(
       handlePositionUpdate,
       handleGPSError,
       options,

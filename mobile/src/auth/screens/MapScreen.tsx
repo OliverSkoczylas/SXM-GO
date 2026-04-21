@@ -18,6 +18,7 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -101,14 +102,10 @@ const LocationCard = React.memo(function LocationCard({
 
 function getUserLocation(): Promise<{ lat: number; lng: number } | null> {
   return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
+    Geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => resolve(null),
-      { timeout: 5000, maximumAge: 60000, enableHighAccuracy: true },
+      { timeout: 10000, maximumAge: 0, enableHighAccuracy: true },
     );
   });
 }

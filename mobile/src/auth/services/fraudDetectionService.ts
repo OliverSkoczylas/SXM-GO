@@ -3,6 +3,7 @@
 // FR-033: Suspicious check-in patterns trigger manual review
 
 import { Platform } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSupabaseClient } from './supabaseClient';
 
@@ -148,12 +149,7 @@ export interface GpsPosition {
 
 export function getValidatedGpsPosition(): Promise<GpsPosition | null> {
   return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve(null);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
+    Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
 
@@ -166,7 +162,7 @@ export function getValidatedGpsPosition(): Promise<GpsPosition | null> {
         resolve({ latitude, longitude, accuracy, isMocked });
       },
       () => resolve(null),
-      { timeout: 10000, maximumAge: 5000, enableHighAccuracy: true },
+      { timeout: 20000, maximumAge: 0, enableHighAccuracy: true },
     );
   });
 }

@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS public.check_ins (
   user_id     UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   location_id UUID NOT NULL REFERENCES public.locations(id) ON DELETE CASCADE,
   points_earned INTEGER NOT NULL,
+  gps_latitude DOUBLE PRECISION,
+  gps_longitude DOUBLE PRECISION,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, location_id)
 );
