@@ -1,67 +1,97 @@
-# FAQs
-Author: Taylor Knipe
+# SXM GO - Frequently Asked Questions (FAQs)
 
-## 1. Why am I signed out or why didn’t my session restore when I reopened the app?
-
-SXM GO relies on authenticated sessions and secure local storage. If your session does not restore, it may be due to an expired session, a failed token refresh, or an issue with secure storage on the device. Close and reopen the app first. If that does not work, sign in again. If the issue keeps happening, test the account with email/password login to determine whether the problem is specific to a social login provider.
-
----
-
-## 2. Why is social login not working with Google, Apple, or Facebook?
-
-Social login depends on both the app and the external provider being configured correctly. Problems can happen if Play Services are unavailable, the provider returns no token, the user cancels the login flow, or the provider rejects the request. Try again with a stable internet connection. If the issue continues, use email/password login if available and verify that the provider account is active on the device.
+**Author:** Paul Han
+**Version:** 1.1  
+**Last Updated:** April 2026
 
 ---
 
-## 3. Why can’t I use the map, location-based features, or check-in-related functionality?
+## 1. Authentication & Sessions
 
-Most map and visit-related features require location permission. If location access is denied, blocked, or restricted, some features may not work correctly. If you previously denied access, go to your device settings and re-enable location permission for the app. After changing permissions, fully reopen the app and try again.
+### Why am I signed out or why didn’t my session restore?
+SXM GO uses **OAuth 2.0 tokens** stored in the device's secure enclave (Keychain on iOS, Keystore on Android). Sessions may fail to restore if:
+*   The refresh token has expired (typically after 30 days of inactivity).
+*   The device's secure storage was cleared or is being blocked by a system-level security update.
+*   Clock synchronization issues between your device and our servers.
+**Solution:** Force close the app and reopen. If prompted, sign in again to generate a new secure session.
 
----
-
-## 4. Why is my profile photo not changing or why won’t the image picker open?
-
-Profile photo updates usually depend on photo library permission and image picker access. If the app cannot open your photos or save the selected image, check your device permissions for photo or media access. If permission was denied earlier, enable it in system settings and try again. If the image picker opens but the photo still does not update, retry after refreshing the profile screen.
-
----
-
-## 5. Why didn’t my changes to profile, settings, privacy options, or itineraries update immediately?
-
-Some updates rely on backend requests and may not appear instantly if the network is slow or the save does not complete. Try refreshing the screen, leaving and reopening the page, or restarting the app. If the change still does not appear, assume the save may not have completed and submit it again.
-
----
-
-## 6. Why am I getting validation errors when signing up or changing my password?
-
-SXM GO validates account information before submitting it. Email addresses must be properly formatted, display names must meet allowed character rules, and passwords must meet security requirements such as length and character complexity. During sign-up, required consent fields also need to be accepted. If a form will not submit, check every field carefully and fix the validation message shown on screen.
+### Why is social login (Google, Apple, Facebook) not working?
+Social login requires a handshake between our app, the Supabase backend, and the provider's API. Common failure points include:
+*   **Missing Redirects:** Ensure you are not using a private/incognito browser as the default on your device.
+*   **Account Mismatch:** If you previously signed up with Email/Password using the same email address, the social login may be blocked for security.
+*   **Provider Downtime:** Occasionally, Apple or Google services experience brief outages.
+**Solution:** Check your internet connection. If the issue persists, try the "Forgot Password" flow with your social email to link an email/password login as a fallback.
 
 ---
 
-## 7. Why do privacy-related actions like account deletion or data export take longer than normal actions?
+## 2. Map & Location Services
 
-Privacy actions such as requesting account deletion or exporting user data may involve backend processing rather than an immediate UI-only change. These requests can take longer because they may call server-side functions and wait for a response. If you do not see immediate confirmation, check for an error message, then retry only if the first request clearly failed.
+### Why can’t I see my location on the map?
+The map relies on **High Accuracy GPS (Fine Location)**. If your location isn't appearing:
+*   **Permission Status:** You may have granted "Approximate" rather than "Precise" location.
+*   **System Settings:** Low Power Mode or Data Saver Mode can restrict background GPS updates.
+*   **Signal Blockage:** Tall buildings or dense foliage in areas like Philipsburg or the hills of St. Maarten can degrade GPS signals.
+**Solution:** Ensure "Precise Location" is enabled in your device settings for SXM GO.
+
+### Why won't the map load?
+We use OpenStreetMap (OSM) via Leaflet. If the map tiles are missing:
+*   You may be in a "dead zone" with poor cellular reception.
+*   Your device's local cache for map tiles may be corrupted.
+**Solution:** Check your connection. The map caches tiles you've previously viewed, so try browsing the island while on Wi-Fi before heading out to remote beaches.
 
 ---
 
-## 8. Why does the app ask for permissions more than once?
+## 3. Check-ins & Gamification
 
-The app may ask again when a feature depends on a permission that was previously denied, only partially granted, or not fully completed. This is most common with location, camera, or photo library access. Repeated prompts usually mean the app still does not have the level of access needed for that feature.
+### Why can't I check in at a location?
+To ensure fair play and prevent "sofa traveling," we enforce two strict rules:
+1.  **Proximity:** You must be within **100 meters** of the location's coordinates.
+2.  **Cooldown:** You can only check in at the same location once every **24 hours**.
+**Solution:** Open the Map screen, tap the location pin, and check the "Distance" indicator. If you are within 100m and still can't check in, ensure your GPS hasn't "drifted."
+
+### Why didn't I get points for my check-in?
+Points are awarded via a backend trigger. If your points didn't update:
+*   **Sync Latency:** High traffic on the leaderboard may cause a 5-10 second delay.
+*   **Anti-Fraud:** If the system detects GPS spoofing or impossible travel speeds (e.g., checking in at Marigot and then Philipsburg in 2 minutes), the points may be held for review.
 
 ---
 
-## 9. Why does a feature appear in the app but not seem to do anything?
+## 4. Itineraries & Sharing
 
-Some screens or components may render correctly even if the related backend data, permissions, or supporting service call is missing or incomplete. This is especially possible during development builds. If a screen opens but no data appears, check whether you are signed in, whether the device has network access, and whether the feature depends on permissions or existing saved data.
+### How do I add locations to an itinerary?
+You cannot add locations directly from the Itinerary screen. 
+1.  Go to the **Map Tab**.
+2.  Tap a location pin or find it in the list below the map.
+3.  Tap **"+ Add"** or **"Add to Itinerary"** in the details popup.
+4.  Select your target itinerary.
+
+### Why isn't my shared itinerary link working?
+Itinerary sharing uses **Deep Linking** (`sxmgo://itinerary/...`). 
+*   The recipient must have the SXM GO app installed to view the full details.
+*   The itinerary must be set to **"Public"** in the itinerary settings for others to view it.
 
 ---
 
-## 10. What should I check first before reporting a bug?
+## 5. Profile & Privacy
 
-Before reporting a bug, check these basics first:
-- confirm you are signed in
-- confirm your internet connection is working
-- confirm the required permission is enabled
-- refresh the screen or restart the app
-- try to reproduce the issue a second time
+### Why won't my profile photo upload?
+Avatar uploads require **Photo Library/Media permissions**. 
+*   **File Size:** Images larger than 5MB may be rejected by the server.
+*   **Format:** We support `.jpg`, `.png`, and `.webp`.
+**Solution:** Try a smaller photo or a different format. If the "Picker" doesn't open, reset permissions in Settings > SXM GO > Photos.
 
-If the problem still happens, record which screen you were on, what action you took, and what result you expected.
+### How do I delete my account and data?
+In compliance with **GDPR and CCPA**, we provide a self-service deletion option:
+1.  Go to **Profile** > **Privacy & Data**.
+2.  Select **"Delete Account"**.
+3.  Confirm the prompt. Note: This action is permanent and deletes all points, history, and group memberships.
+
+---
+
+## 6. Troubleshooting Checklist
+
+Before reporting a bug, please perform the following:
+1.  **Toggle AirPlane Mode:** Resets your cellular and GPS radios.
+2.  **Check for Updates:** Ensure you are on the latest version from the App Store or Play Store.
+3.  **Clear Cache:** (Android only) Go to App Info > Storage > Clear Cache.
+4.  **Verify Permissions:** Map, Camera, and Notifications should all be enabled for the best experience.
