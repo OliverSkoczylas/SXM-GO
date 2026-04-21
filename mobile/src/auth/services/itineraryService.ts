@@ -19,6 +19,18 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 }
 
 export const itineraryService = {
+  async getFeaturedItineraries(): Promise<Itinerary[]> {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from('itineraries')
+      .select('*')
+      .eq('is_featured', true)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  },
+
   async getMyItineraries(): Promise<Itinerary[]> {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase

@@ -4,10 +4,11 @@ export type ItineraryDifficulty = 'easy' | 'moderate' | 'challenging';
 
 export interface Itinerary {
   id: string;
-  user_id: string;
+  user_id: string | null;  // null for platform-curated featured itineraries
   name: string;
   description: string;
   is_public: boolean;
+  is_featured: boolean;
   status: ItineraryStatus;
   difficulty: ItineraryDifficulty;
   estimated_minutes: number | null;

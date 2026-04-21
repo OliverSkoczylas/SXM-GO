@@ -13,6 +13,19 @@ export const useItineraries = () => {
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [currentItinerary, setCurrentItinerary] = useState<ItineraryWithItems | null>(null);
 
+  const fetchFeaturedItineraries = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await itineraryService.getFeaturedItineraries();
+      setItineraries(data);
+      setError(null);
+    } catch (e: any) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const fetchMyItineraries = useCallback(async () => {
     setLoading(true);
     try {
@@ -126,6 +139,7 @@ export const useItineraries = () => {
     error,
     itineraries,
     currentItinerary,
+    fetchFeaturedItineraries,
     fetchMyItineraries,
     fetchPublicItineraries,
     fetchItineraryDetails,
