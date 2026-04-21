@@ -1,5 +1,7 @@
 # SXM GO — Sponsor User Guide
 
+Author: Kaiden Vandegrift
+
 Welcome to SXM GO — the app that turns exploring St. Maarten into a game. Visitors earn points by checking in at beaches, restaurants, casinos, and attractions across the island. They compete on leaderboards, complete challenges, build daily streaks, and track their routes as they discover everything St. Maarten has to offer.
 
 ---
