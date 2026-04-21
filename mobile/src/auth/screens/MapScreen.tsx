@@ -21,6 +21,7 @@ import {
 import { WebView } from 'react-native-webview';
 import Geolocation from '@react-native-community/geolocation';
 import { getLocations, checkIn, Location, getDistance } from '../services/locationService';
+import { shareService } from '../services/shareService';
 import { useAuth } from '../hooks/useAuth';
 import Toast from '../../shared/components/Toast';
 import AddToItineraryModal from '../components/AddToItineraryModal';

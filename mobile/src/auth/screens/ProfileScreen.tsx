@@ -17,6 +17,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/AppNavigator';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
+import { shareService } from '../services/shareService';
 import { displayNameSchema, bioSchema } from '../utils/validation';
 import { AUTH_MESSAGES } from '../constants/authConstants';
 import AvatarPicker from '../components/AvatarPicker';
@@ -52,6 +53,12 @@ export default function ProfileScreen() {
     await updateProfile({ display_name: editName.trim(), bio: editBio.trim() });
     setIsEditing(false);
     setToast({ visible: true, message: AUTH_MESSAGES.PROFILE_UPDATED, type: 'success' });
+  };
+
+  const handleShareProfile = () => {
+    if (profile) {
+      shareService.shareProfile(profile.display_name, profile.total_points);
+    }
   };
 
   if (!profile) {
@@ -133,16 +140,24 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{profile.email}</Text>
           {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
 
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => {
-              setEditName(profile.display_name);
-              setEditBio(profile.bio);
-              setIsEditing(true);
-            }}
-          >
-            <Text style={styles.editButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => {
+                setEditName(profile.display_name);
+                setEditBio(profile.bio);
+                setIsEditing(true);
+              }}
+            >
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShareProfile}
+            >
+              <Text style={styles.shareButtonText}>Share Stats</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -162,9 +177,13 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Achievements</Text>
           <View style={styles.badgeRow}>
             {profile.achievements.map((badge, i) => (
-              <View key={i} style={styles.badge}>
-                <Text style={styles.badgeText}>{badge}</Text>
-              </View>
+              <TouchableOpacity 
+                key={i} 
+                style={styles.badge}
+                onPress={() => shareService.shareBadge(badge)}
+              >
+                <Text style={styles.badgeText}>{badge} 🔗</Text>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -219,6 +238,7 @@ const styles = StyleSheet.create({
   displayName: { fontSize: 24, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
   email: { fontSize: 14, color: '#6B7280', marginBottom: 8 },
   bio: { fontSize: 15, color: '#4B5563', textAlign: 'center', lineHeight: 22, marginBottom: 16 },
+  actionRow: { flexDirection: 'row', gap: 12 },
   editButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -227,6 +247,13 @@ const styles = StyleSheet.create({
     borderColor: '#0066CC',
   },
   editButtonText: { color: '#0066CC', fontSize: 14, fontWeight: '600' },
+  shareButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#0066CC',
+  },
+  shareButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   editSection: { marginBottom: 24 },
   field: { marginBottom: 16 },
   label: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', marginBottom: 6 },
