@@ -238,7 +238,12 @@ export default function ActivityScreen() {
 
     const { data, error } = await startActivity(user.id);
     if (error || !data) {
-      Alert.alert('Error', 'Failed to start activity. Please try again.');
+      // Log the real Supabase error so it shows up in the console for debugging
+      log.warn('[Activity] startActivity failed:', error?.message ?? error ?? 'no data returned');
+      Alert.alert(
+        'Failed to Start',
+        `Could not create the activity record.\n\n${error?.message ?? 'Unknown error — check that migration 015 has been applied in Supabase.'}`,
+      );
       return;
     }
 

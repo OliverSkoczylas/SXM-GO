@@ -108,14 +108,10 @@ export async function startActivity(
     .insert({
       user_id: userId,
       started_at: new Date().toISOString(),
-      ended_at: null,
-      distance_km: 0,
-      duration_seconds: 0,
-      avg_pace_min_per_km: 0,
-      route_points: [],
-      check_in_ids: [],
-      title: null,
-      is_complete: false,
+      // Let the DB defaults handle ended_at (NULL), distance_km (0),
+      // duration_seconds (0), avg_pace_min_per_km (0), route_points ('[]'),
+      // check_in_ids ('{}'), and is_complete (false) — avoids UUID[] type
+      // ambiguity when sending an empty JS array over the REST API.
     })
     .select()
     .single();
