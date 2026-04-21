@@ -36,7 +36,7 @@ const FeaturedCard = React.memo(
     const meta = FEATURED_META[item.name] ?? {
       emoji: '⭐',
       accent: '#0066CC',
-      tagline: item.difficulty,
+      tagline: item.difficulty ?? 'easy',
     };
 
     return (
@@ -59,7 +59,8 @@ const FeaturedCard = React.memo(
         <View style={styles.featuredFooter}>
           <View style={[styles.difficultyPill, { backgroundColor: meta.accent + '22' }]}>
             <Text style={[styles.difficultyText, { color: meta.accent }]}>
-              {item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1)}
+              {(item.difficulty ?? 'easy').charAt(0).toUpperCase() +
+                (item.difficulty ?? 'easy').slice(1)}
             </Text>
           </View>
           <Text style={styles.featuredCta}>View route →</Text>
